@@ -6,11 +6,17 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+server = ["maud", "rocket"]
+
 [dependencies]
 zeronet_protocol = { path = "../zeronet_protocol" }
+futures = "*"
 log = "*"
 pretty_env_logger = "*"
-futures = "*"
-serde_json = "*"
 serde = "*"
+serde_json = "*"
 serde_bytes = "*"
+
+maud = { version = "*", features = ["rocket"], optional = true }
+rocket = { version = "*", optional = true }

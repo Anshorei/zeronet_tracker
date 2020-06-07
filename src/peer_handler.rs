@@ -203,7 +203,13 @@ impl SharedState {
         let peer = self.peers.get(*peer_id).unwrap();
         peer.clone()
       }).collect()
-	}
+  }
+  pub fn peer_count(&self) -> usize {
+    self.peers.len()
+  }
+  pub fn hash_count(&self) -> usize {
+    self.hashes.len()
+  }
 }
 
 #[derive(Clone)]

@@ -101,9 +101,10 @@ impl Handler {
 				port: announce.port,
 			};
       let hashes: Vec<Vec<u8>> = announce.hashes.iter().map(|buf| buf.clone().into_vec()).collect();
-      shared_state.insert_peer(peer, hashes.clone());
-      let mut peers = templates::AnnouncePeers::default();
+			shared_state.insert_peer(peer, hashes.clone());
+			let mut hash_peers = Vec::new();
       hashes.into_iter().for_each(|hash| {
+				let mut peers = templates::AnnouncePeers::default();
         shared_state.get_peers(&hash).into_iter().for_each(|peer| {
           if let Ok(peer) = Address::parse(peer.address) {
             let bytes = ByteBuf::from(peer.pack());
@@ -120,9 +121,10 @@ impl Handler {
               _ => {},
             }
           }
-        })
+				});
+				hash_peers.push(peers);
       });
-      body.peers = peers;
+      body.peers = hash_peers;
 		}
     trace!("Response: {:?}", &body);
 
@@ -155,8 +157,8 @@ impl Handler {
 }
 
 pub struct SharedState {
-	peers: HashMap<String, Peer>,
-	hashes: HashMap<Vec<u8>, Hash>,
+	pub peers: HashMap<String, Peer>,
+	pub hashes: HashMap<Vec<u8>, Hash>,
 	hash_to_peer: HashMap<Vec<u8>, HashSet<String>>,
 }
 

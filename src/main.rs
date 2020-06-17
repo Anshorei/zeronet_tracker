@@ -31,7 +31,9 @@ fn main() {
 
 	start_server(&shared_state);
 
-	let address = "127.0.0.1:8002".to_string();
+	let port = std::env::var("PORT").unwrap_or("8002".to_string());
+
+	let address = format!("127.0.0.1:{}", port);
 	let listener = TcpListener::bind(&address).unwrap();
 	trace!("Listening on {}!", address);
 

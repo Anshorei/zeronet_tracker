@@ -17,8 +17,8 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
 
     std::thread::spawn(move || {
       let connection =
-        ZeroConnection::new(address, Box::new(stream.try_clone().unwrap()), Box::new(stream)).unwrap();
-      let mut handler = Handler::create(shared_state, connection);
+        ZeroConnection::new(address.clone(), Box::new(stream.try_clone().unwrap()), Box::new(stream)).unwrap();
+      let mut handler = Handler::create(shared_state, connection, address);
       handler.run();
     });
   } else {
@@ -30,16 +30,19 @@ struct Handler {
 	peer_id: String,
 	shared_state: Arc<Mutex<SharedState>>,
 	connection: ZeroConnection,
+	address: Address,
 }
 
 impl Handler {
-	pub fn create(shared_state: Arc<Mutex<SharedState>>, connection: ZeroConnection) -> Handler {
+	pub fn create(shared_state: Arc<Mutex<SharedState>>, connection: ZeroConnection, address: Address) -> Handler {
 		Handler {
 			peer_id: "random shit".to_string(),
 			shared_state,
 			connection,
+			address,
 		}
 	}
+
 	pub fn run(&mut self) {
 		loop {
 			trace!("Waiting for data...");
@@ -54,17 +57,37 @@ impl Handler {
 			let req = req.unwrap();
 			info!("Received request: {:?}", req.cmd);
 			match req.cmd.as_str() {
-				"handshake" => self.handle_handshake(req.req_id),
+				"handshake" => self.handle_handshake(req),
 				"announce" => self.handle_announce(req),
 				_ => self.handle_unsupported(req.req_id),
 			};
 		}
 	}
 
-	fn handle_handshake(&mut self, req_id: usize) {
+	fn handle_handshake(&mut self, req: Request) {
+		trace!("Received handshake: {:?}", req);
+		let handshake: Result<templates::Handshake, _> = req.body();
+		let handshake = match handshake {
+			Ok(handshake) => handshake,
+			Err(err) => {
+				return self.handle_invalid(req.req_id, err);
+			},
+		};
+		if let Some(onion) = handshake.onion {
+			let port = self.address.get_port();
+			match Address::parse(format!("{}.onion:{}", onion, port)) {
+				Ok(address) => self.address = address,
+				Err(err) => {
+					error!("Could not parse address: {:?}", err);
+					return;
+				}
+			}
+		}
+
 		let mut body = templates::Handshake::new();
 		body.peer_id = self.peer_id.clone();
-		let response = self.connection.respond(req_id, body);
+		trace!("Response: {:?}", body);
+		let response = self.connection.respond(req.req_id, body);
 		let result = block_on(response);
 		if let Err(err) = result {
 			error!("Encountered error responding to handshake: {:?}", err);
@@ -78,17 +101,19 @@ impl Handler {
 			Err(err) => {
 				return self.handle_invalid(req.req_id, err)
 			}
-    };
+		};
+
+		let mut announce = announce;
 		trace!("Announce: {:?}", announce);
 
 		let mut body = templates::AnnounceResponse::default();
 		{
 			let mut shared_state = self.shared_state.lock().unwrap();
 			if announce.delete {
+				warn!("Deleting hashes is not yet implemented!");
         // TODO: remove hashes peer is no longer seeding
 			}
-			// TODO: get actual IP
-			let address = format!("{}:{}", "127.0.0.1", announce.port);
+			let address = self.address.with_port(announce.port as u16);
 			let peer = shared_state.peers.get(&address);
 			let date_added = match peer {
 				Some(peer) => peer.date_added,
@@ -98,29 +123,45 @@ impl Handler {
 				address: address,
 				last_seen: Instant::now(),
 				date_added,
-				port: announce.port,
 			};
-      let hashes: Vec<Vec<u8>> = announce.hashes.iter().map(|buf| buf.clone().into_vec()).collect();
-			shared_state.insert_peer(peer, hashes.clone());
+
+			let hashes: Vec<Vec<u8>> = announce.hashes.iter().map(|buf| buf.clone().into_vec()).collect();
+			if announce.onions.is_empty() {
+				shared_state.insert_peer(peer, hashes.clone());
+			} else {
+				announce.onions.iter()
+				.zip(hashes.iter())
+				.for_each(|(onion, hash)| {
+					match Address::parse(format!("{}.onion:{}", onion, announce.port)) {
+						Ok(onion) => {
+							let peer = Peer {
+								address: onion,
+								last_seen: Instant::now(),
+								date_added,
+							};
+							shared_state.insert_peer(peer, vec![hash.clone()]);
+						},
+						Err(_) => {},
+					};
+				});
+			}
 			let mut hash_peers = Vec::new();
       hashes.into_iter().for_each(|hash| {
 				let mut peers = templates::AnnouncePeers::default();
         shared_state.get_peers(&hash).into_iter().for_each(|peer| {
-          if let Ok(peer) = Address::parse(peer.address) {
-            let bytes = ByteBuf::from(peer.pack());
-            match peer {
-              Address::IPV4(_, _) => {
-                peers.ip_v4.push(bytes);
-              },
-              Address::IPV6(_, _) => {
-                peers.ip_v6.push(bytes);
-              },
-              Address::OnionV2(_, _) => {
-                peers.onion_v2.push(bytes);
-              }
-              _ => {},
-            }
-          }
+					let bytes = ByteBuf::from(peer.address.pack());
+					match peer.address {
+						Address::IPV4(_, _) => {
+							peers.ip_v4.push(bytes);
+						},
+						Address::IPV6(_, _) => {
+							peers.ip_v6.push(bytes);
+						},
+						Address::OnionV2(_, _) => {
+							peers.onion_v2.push(bytes);
+						}
+						_ => {},
+					}
 				});
 				hash_peers.push(peers);
       });
@@ -136,6 +177,7 @@ impl Handler {
 	}
 
 	fn handle_invalid(&mut self, req_id: usize, err: Error) {
+		error!("Handling invalid request: {:?}", err);
 		let body = templates::Error {
 			error: format!("Invalid data: {:?}", err),
 		};
@@ -157,9 +199,10 @@ impl Handler {
 }
 
 pub struct SharedState {
-	pub peers: HashMap<String, Peer>,
+	pub peers: HashMap<Address, Peer>,
 	pub hashes: HashMap<Vec<u8>, Hash>,
-	hash_to_peer: HashMap<Vec<u8>, HashSet<String>>,
+	pub hash_to_peer: HashMap<Vec<u8>, HashSet<Address>>,
+	pub start_time: Instant,
 }
 
 impl SharedState {
@@ -168,12 +211,11 @@ impl SharedState {
 			peers: HashMap::new(),
 			hashes: HashMap::new(),
 			hash_to_peer: HashMap::new(),
+			start_time: Instant::now(),
 		}
 	}
-	pub fn insert_peer(&mut self, peer: Peer, hashes: Vec<Vec<u8>>) {
-		let address = peer.address.clone();
-		let result = self.peers.insert(address.clone(), peer);
 
+	pub fn insert_peer(&mut self, peer: Peer, hashes: Vec<Vec<u8>>) {
 		for hash in hashes.iter() {
 			if !self.hashes.contains_key(hash) {
 				let new_hash = Hash {
@@ -185,14 +227,17 @@ impl SharedState {
 			if !self.hash_to_peer.contains_key(hash) {
 				self.hash_to_peer.insert(hash.clone(), HashSet::new());
 			}
-			self.hash_to_peer.get_mut(hash).unwrap().insert(address.clone());
+			self.hash_to_peer.get_mut(hash).unwrap().insert(peer.address.clone());
 		}
 
+		let peer_address = peer.address.to_string();
+		let result = self.peers.insert(peer.address.clone(), peer);
 		match result {
-			Some(_) => trace!("Updated peer {} for {} hashes", &address, hashes.len()),
-			None => trace!("Added peer {} for {} hashes", &address, hashes.len()),
+			Some(_) => trace!("Updated peer {} for {} hashes", peer_address, hashes.len()),
+			None => trace!("Added peer {} for {} hashes", peer_address, hashes.len()),
 		}
 	}
+
 	pub fn get_peers(&self, hash: &Vec<u8>) -> Vec<Peer> {
     let peers = self.hash_to_peer.get(hash);
     let peers = match peers {
@@ -205,10 +250,12 @@ impl SharedState {
         let peer = self.peers.get(*peer_id).unwrap();
         peer.clone()
       }).collect()
-  }
+	}
+
   pub fn peer_count(&self) -> usize {
     self.peers.len()
-  }
+	}
+
   pub fn hash_count(&self) -> usize {
     self.hashes.len()
   }
@@ -216,8 +263,7 @@ impl SharedState {
 
 #[derive(Clone)]
 pub struct Peer {
-	pub address: String,
-	pub port: usize,
+	pub address: Address,
 	pub date_added: Instant,
 	pub last_seen: Instant,
 }

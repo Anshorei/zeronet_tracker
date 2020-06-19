@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ansho Rei <anshorei@zeroid.bit>"]
 edition = "2018"
 
@@ -17,6 +17,7 @@ pretty_env_logger = "*"
 serde = "*"
 serde_json = "*"
 serde_bytes = "*"
+base64 = "*"
 
 maud = { version = "*", features = ["rocket"], optional = true }
 rocket = { version = "*", optional = true }

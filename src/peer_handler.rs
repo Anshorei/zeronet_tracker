@@ -18,8 +18,17 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
     std::thread::spawn(move || {
       let connection =
         ZeroConnection::new(address.clone(), Box::new(stream.try_clone().unwrap()), Box::new(stream)).unwrap();
-      let mut handler = Handler::create(shared_state, connection, address);
-      handler.run();
+			let mut handler = Handler::create(shared_state.clone(), connection, address);
+
+			{
+				let mut shared_state = shared_state.lock().unwrap();
+				shared_state.connections += 1;
+			}
+
+			handler.run();
+
+			let mut shared_state = shared_state.lock().unwrap();
+			shared_state.connections -= 1;
     });
   } else {
     error!("Could not detect address for stream.");
@@ -203,6 +212,7 @@ pub struct SharedState {
 	pub hashes: HashMap<Vec<u8>, Hash>,
 	pub hash_to_peer: HashMap<Vec<u8>, HashSet<Address>>,
 	pub start_time: Instant,
+	pub connections: usize,
 }
 
 impl SharedState {
@@ -212,6 +222,7 @@ impl SharedState {
 			hashes: HashMap::new(),
 			hash_to_peer: HashMap::new(),
 			start_time: Instant::now(),
+			connections: 0,
 		}
 	}
 

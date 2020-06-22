@@ -9,7 +9,7 @@ mod server;
 
 use peer_handler::{spawn_handler, SharedState};
 
-const VERSION: &str = "0.1.1";
+const VERSION: &str = "0.1.2";
 
 #[cfg(feature = "server")]
 fn start_server(shared_state: &Arc<Mutex<SharedState>>) {

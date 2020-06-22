@@ -1,15 +1,17 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 use log::*;
-use std::net::{TcpListener};
+use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
 mod peer_handler;
 #[cfg(feature = "server")]
 mod server;
+mod shared_state;
 
-use peer_handler::{spawn_handler, SharedState};
+use peer_handler::spawn_handler;
+use shared_state::SharedState;
 
-const VERSION: &str = "0.1.2";
+const VERSION: &str = "0.1.3";
 
 #[cfg(feature = "server")]
 fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
@@ -23,7 +25,6 @@ fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
 fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
 	info!("Compiled with server feature disabled, skipping.")
 }
-
 
 fn main() {
 	pretty_env_logger::init_timed();

@@ -22,7 +22,7 @@ impl SharedState {
 		}
 	}
 
-	pub fn insert_peer(&mut self, peer: Peer, hashes: Vec<Vec<u8>>) {
+	pub fn insert_peer(&mut self, peer: Peer, hashes: Vec<Vec<u8>>) -> Option<Peer> {
 		for hash in hashes.iter() {
 			if !self.hashes.contains_key(hash) {
 				let new_hash = Hash {
@@ -39,14 +39,9 @@ impl SharedState {
 				.get_mut(hash)
 				.unwrap()
 				.insert(peer.address.clone());
-		}
+    }
 
-		let peer_address = peer.address.to_string();
-		let result = self.peers.insert(peer.address.clone(), peer);
-		match result {
-			Some(_) => trace!("Updated peer {} for {} hashes", peer_address, hashes.len()),
-			None => trace!("Added peer {} for {} hashes", peer_address, hashes.len()),
-		}
+    self.peers.insert(peer.address.clone(), peer)
 	}
 
 	pub fn get_peers(&self, hash: &Vec<u8>) -> Vec<Peer> {

@@ -147,7 +147,12 @@ impl Handler {
 				.map(|buf| buf.clone().into_vec())
 				.collect();
 			if announce.onions.is_empty() {
-				shared_state.insert_peer(peer, hashes.clone());
+				let peer_address = peer.address.to_string();
+				let result = shared_state.insert_peer(peer, hashes.clone());
+				match result {
+					Some(_) => trace!("Updated peer {} for {} hashes", peer_address, hashes.len()),
+					None => trace!("Added peer {} for {} hashes", peer_address, hashes.len()),
+				}
 			} else {
 				announce
 					.onions
@@ -166,6 +171,7 @@ impl Handler {
 							Err(_) => {}
 						};
 					});
+				trace!("Added onions for {} hashes", announce.onions.len());
 			}
 			let mut hash_peers = Vec::new();
 			hashes.into_iter().for_each(|hash| {

@@ -1,6 +1,7 @@
 ![Build](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/img/build.svg)
 ![Tests](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/img/tests.svg)
-![Coverage](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/img/coverage.svg)
+[![Coverage](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/img/coverage.svg)](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/coverage/html)
+[![Documentation](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/img/doc.svg)](http://localhost:43110/1EtS177qrqicnGtGzktcMPEeL13FeLKJEG/doc/zeronet_tracker)
 
 # ZeroNet Tracker
 This is a ZeroNet tracker written in Rust. It can keep track of a number of different peer types.

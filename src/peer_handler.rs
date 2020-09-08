@@ -41,10 +41,10 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
 }
 
 struct Handler {
-	peer_id: String,
+	peer_id:      String,
 	shared_state: Arc<Mutex<SharedState>>,
-	connection: ZeroConnection,
-	address: Address,
+	connection:   ZeroConnection,
+	address:      Address,
 }
 
 impl Handler {

@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 use log::*;
 use std::net::TcpListener;
-use std::sync::{Arc, Mutex, Barrier};
+use std::sync::{Arc, Barrier, Mutex};
 
 mod peer_handler;
 #[cfg(feature = "server")]

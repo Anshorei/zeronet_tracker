@@ -4,21 +4,21 @@ use std::time::{Duration, Instant};
 use zeronet_protocol::Address;
 
 pub struct SharedState {
-	pub peers: HashMap<Address, Peer>,
-	pub hashes: HashMap<Vec<u8>, Hash>,
+	pub peers:        HashMap<Address, Peer>,
+	pub hashes:       HashMap<Vec<u8>, Hash>,
 	pub hash_to_peer: HashMap<Vec<u8>, HashSet<Address>>,
-	pub start_time: Instant,
-	pub connections: usize,
+	pub start_time:   Instant,
+	pub connections:  usize,
 }
 
 impl SharedState {
 	pub fn new() -> SharedState {
 		SharedState {
-			peers: HashMap::new(),
-			hashes: HashMap::new(),
+			peers:        HashMap::new(),
+			hashes:       HashMap::new(),
 			hash_to_peer: HashMap::new(),
-			start_time: Instant::now(),
-			connections: 0,
+			start_time:   Instant::now(),
+			connections:  0,
 		}
 	}
 
@@ -26,7 +26,7 @@ impl SharedState {
 		for hash in hashes.iter() {
 			if !self.hashes.contains_key(hash) {
 				let new_hash = Hash {
-					hash: hash.clone(),
+					hash:       hash.clone(),
 					date_added: Instant::now(),
 				};
 				self.hashes.insert(hash.clone(), new_hash);
@@ -39,9 +39,9 @@ impl SharedState {
 				.get_mut(hash)
 				.unwrap()
 				.insert(peer.address.clone());
-    }
+		}
 
-    self.peers.insert(peer.address.clone(), peer)
+		self.peers.insert(peer.address.clone(), peer)
 	}
 
 	pub fn get_peers(&self, hash: &Vec<u8>) -> Vec<Peer> {
@@ -71,13 +71,13 @@ impl SharedState {
 
 #[derive(Clone)]
 pub struct Peer {
-	pub address: Address,
+	pub address:    Address,
 	pub date_added: Instant,
-	pub last_seen: Instant,
+	pub last_seen:  Instant,
 }
 
 #[derive(Clone)]
 pub struct Hash {
-	pub hash: Vec<u8>,
+	pub hash:       Vec<u8>,
 	pub date_added: Instant,
 }

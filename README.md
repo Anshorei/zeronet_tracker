@@ -24,8 +24,8 @@ Features:
   - [ ] Show log (this should not be publicly accessible)
 - [ ] Influx
 
-# Compiling
-Before compiling will need to clone the [ZeroNet Protocol repository](http://localhost:43110/1H3ct93gHL9BgtTnyrqJrkjn4NdociFFTn) to the same folder as the ZeroNet tracker repository. Then you can use `cargo` to run or build the program.
+# Building
+This ZeroNet Tracker depends on the ZeroNet Protocol library which is available from [the Cratez Rust Registry](/1CRAteZVBUYrnx8jj9x87A1zCnptrWFhPH), information on how to add Cratez to your cargo's registry configuration can be found on the site.
 
 ## Optional Features
 

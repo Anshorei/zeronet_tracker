@@ -78,3 +78,25 @@ fn hashes(state: State<StateWrapper>) -> Markup {
 		}
 	}
 }
+
+#[derive(Serialize)]
+struct Stats {
+	requests: usize,
+	peer_count: usize,
+	hash_count: usize,
+	uptime: u64,
+	version: String,
+}
+
+#[get("/stats")]
+fn stats(state: State<StateWrapper>) -> Json<Stats> {
+	let shared_state = state.shared_state.lock().unwrap();
+	let uptime = Instant::now() - shared_state.start_time;
+	Json(Stats {
+		requests: shared_state.requests,
+		peer_count: shared_state.peer_db.get_peer_count(),
+		hash_count: shared_state.peer_db.get_hash_count(),
+		uptime: uptime.as_secs(),
+		version: crate::VERSION.to_string(),
+	})
+}

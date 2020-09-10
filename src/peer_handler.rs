@@ -66,6 +66,10 @@ impl Handler {
 		loop {
 			trace!("Waiting for data...");
 			let req = block_on(self.connection.recv());
+			{
+				let mut shared_state = self.shared_state.lock().unwrap();
+				shared_state.requests += 1;
+			}
 			if let Err(err) = req {
 				match err {
 					Error::Io(err) => info!("Connection terminated! {:?}", err),

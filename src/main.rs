@@ -2,19 +2,19 @@
 use log::*;
 use std::net::TcpListener;
 use std::sync::{Arc, Barrier, Mutex};
+use clap::*;
 
 mod peer_handler;
-#[cfg(feature = "server")]
-mod server;
 mod shared_state;
 mod tests;
 mod peer_db;
 mod janitor;
 
+#[cfg(feature = "server")]
+mod server;
+
 use peer_handler::spawn_handler;
 use shared_state::SharedState;
-
-const VERSION: &str = "0.1.4";
 
 #[cfg(feature = "server")]
 fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
@@ -34,6 +34,11 @@ fn start_janitor(shared_state: &Arc<Mutex<SharedState>>) {
   std::thread::spawn(move || {
     janitor::run(moved_state);
   });
+}
+
+fn get_arguments() {
+	let matches = app_from_crate!()
+		.get_matches();
 }
 
 fn start_listener(shared_state: Arc<Mutex<SharedState>>) -> Arc<Barrier> {
@@ -60,6 +65,7 @@ fn start_listener(shared_state: Arc<Mutex<SharedState>>) -> Arc<Barrier> {
 }
 
 fn main() {
+	get_arguments();
 	pretty_env_logger::init_timed();
 
 	let shared_state = SharedState::new();

@@ -6,6 +6,7 @@ use rocket_contrib::json::Json;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use serde::Serialize;
+use clap::crate_version;
 
 struct StateWrapper {
 	shared_state: Arc<Mutex<SharedState>>,
@@ -26,7 +27,7 @@ fn overview(state: State<StateWrapper>) -> Markup {
 	let uptime = shared_state.start_time.elapsed().as_secs_f64() / 60f64 / 60f64;
 	html! {
 		h1 { "ZeroNet Tracker" }
-		p { "Version: v" (crate::VERSION) }
+		p { "Version: v" (crate_version!()) }
 		p { "Uptime: " (format!("{:.2}", uptime)) "h" }
 		p { "Connections: " (shared_state.connections) }
 		p {
@@ -97,6 +98,6 @@ fn stats(state: State<StateWrapper>) -> Json<Stats> {
 		peer_count: shared_state.peer_db.get_peer_count(),
 		hash_count: shared_state.peer_db.get_hash_count(),
 		uptime: uptime.as_secs(),
-		version: crate::VERSION.to_string(),
+		version: format!("v{}", crate_version!()),
 	})
 }

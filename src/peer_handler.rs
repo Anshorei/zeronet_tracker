@@ -1,4 +1,5 @@
-use crate::shared_state::{Hash, Peer, SharedState};
+use crate::shared_state::{SharedState};
+use crate::peer_db::{Hash, Peer};
 use futures::executor::block_on;
 use log::*;
 use serde_bytes::ByteBuf;
@@ -125,12 +126,12 @@ impl Handler {
 		let mut body = templates::AnnounceResponse::default();
 		{
 			let mut shared_state = self.shared_state.lock().unwrap();
-			if announce.delete {
-				warn!("Deleting hashes is not yet implemented!");
-				// TODO: remove hashes peer is no longer seeding
-			}
 			let address = self.address.with_port(announce.port as u16);
-			let peer = shared_state.peers.get(&address);
+			if announce.delete {
+				trace!("Deleting peer {}", &address);
+				shared_state.peer_db.remove_peer(&address);
+			}
+			let peer = shared_state.peer_db.get_peer(&address);
 			let date_added = match peer {
 				Some(peer) => peer.date_added,
 				None => Instant::now(),
@@ -148,10 +149,10 @@ impl Handler {
 				.collect();
 			if announce.onions.is_empty() {
 				let peer_address = peer.address.to_string();
-				let result = shared_state.insert_peer(peer, hashes.clone());
+				let result = shared_state.peer_db.update_peer(peer, hashes.clone());
 				match result {
-					Some(_) => trace!("Updated peer {} for {} hashes", peer_address, hashes.len()),
-					None => trace!("Added peer {} for {} hashes", peer_address, hashes.len()),
+					Some(_) => info!("Updated peer {} for {} hashes", peer_address, hashes.len()),
+					None => info!("Added peer {} for {} hashes", peer_address, hashes.len()),
 				}
 			} else {
 				announce
@@ -166,17 +167,17 @@ impl Handler {
 									last_seen: Instant::now(),
 									date_added,
 								};
-								shared_state.insert_peer(peer, vec![hash.clone()]);
+								shared_state.peer_db.update_peer(peer, vec![hash.clone()]);
 							}
 							Err(_) => {}
 						};
 					});
-				trace!("Added onions for {} hashes", announce.onions.len());
+				info!("Added onions for {} hashes", announce.onions.len());
 			}
 			let mut hash_peers = Vec::new();
 			hashes.into_iter().for_each(|hash| {
 				let mut peers = templates::AnnouncePeers::default();
-				shared_state.get_peers(&hash).into_iter().for_each(|peer| {
+				shared_state.peer_db.get_peers_for_hash(&hash).into_iter().for_each(|peer| {
 					let bytes = ByteBuf::from(peer.address.pack());
 					match peer.address {
 						Address::IPV4(_, _) => {

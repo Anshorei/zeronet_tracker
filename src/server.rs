@@ -2,8 +2,10 @@ use crate::shared_state::SharedState;
 use log::*;
 use maud::{html, Markup, PreEscaped};
 use rocket::{get, routes, State};
+use rocket_contrib::json::Json;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
+use serde::Serialize;
 
 struct StateWrapper {
 	shared_state: Arc<Mutex<SharedState>>,
@@ -13,7 +15,7 @@ pub fn run(shared_state: Arc<Mutex<SharedState>>) {
 	info!("Starting server at localhost:8000");
 	let state = StateWrapper { shared_state };
 	rocket::ignite()
-		.mount("/", routes![overview, peers, hashes])
+		.mount("/", routes![overview, peers, hashes, stats])
 		.manage(state)
 		.launch();
 }
@@ -28,10 +30,10 @@ fn overview(state: State<StateWrapper>) -> Markup {
 		p { "Uptime: " (format!("{:.2}", uptime)) "h" }
 		p { "Connections: " (shared_state.connections) }
 		p {
-			a href="/peers" { "Peers: " (shared_state.peer_count()) }
+			a href="/peers" { "Peers: " (shared_state.peer_db.get_peer_count()) }
 		}
 		p {
-			a href="/hashes" { "Hashes: " (shared_state.hash_count()) }
+			a href="/hashes" { "Hashes: " (shared_state.peer_db.get_hash_count()) }
 		}
 	}
 }
@@ -50,7 +52,7 @@ fn peers(state: State<StateWrapper>) -> Markup {
 		a href="/" { ("Back") }
 		h1 { "ZeroNet Tracker - Peer List" }
 		ol {
-			@for peer in shared_state.peers.values() {
+			@for peer in shared_state.peer_db.get_peers().iter() {
 				li { (peer.address.to_string()) }
 			}
 		}
@@ -60,10 +62,11 @@ fn peers(state: State<StateWrapper>) -> Markup {
 #[get("/hashes")]
 fn hashes(state: State<StateWrapper>) -> Markup {
 	let shared_state = state.shared_state.lock().unwrap();
-	let hashes = shared_state
-		.hash_to_peer
+	let hashes = shared_state.peer_db
+		.get_hashes();
+	let hashes = hashes
 		.iter()
-		.map(|(hash, peers)| (base64::encode(hash), peers.len()));
+		.map(|(hash, peers)| (base64::encode(hash), peers));
 	html! {
 		(PreEscaped(STYLE))
 		a href="/" { ("Back") }

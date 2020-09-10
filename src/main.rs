@@ -8,11 +8,13 @@ mod peer_handler;
 mod server;
 mod shared_state;
 mod tests;
+mod peer_db;
+mod janitor;
 
 use peer_handler::spawn_handler;
 use shared_state::SharedState;
 
-const VERSION: &str = "0.1.3";
+const VERSION: &str = "0.1.4";
 
 #[cfg(feature = "server")]
 fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
@@ -25,6 +27,13 @@ fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
 #[cfg(not(feature = "server"))]
 fn start_server(shared_state: &Arc<Mutex<SharedState>>) {
 	info!("Compiled with server feature disabled, skipping.")
+}
+
+fn start_janitor(shared_state: &Arc<Mutex<SharedState>>) {
+  let moved_state = shared_state.clone();
+  std::thread::spawn(move || {
+    janitor::run(moved_state);
+  });
 }
 
 fn start_listener(shared_state: Arc<Mutex<SharedState>>) -> Arc<Barrier> {
@@ -56,6 +65,7 @@ fn main() {
 	let shared_state = SharedState::new();
 	let shared_state = Arc::new(Mutex::new(shared_state));
 
-	start_server(&shared_state);
+  start_server(&shared_state);
+  start_janitor(&shared_state);
 	start_listener(shared_state).wait();
 }

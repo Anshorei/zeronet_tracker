@@ -14,8 +14,8 @@ Peertypes:
 - [ ] Loki
 
 Features:
-- [ ] Remove old peers
-- [ ] Remove peerless hashes
+- [x] Remove dead peers
+- [x] Remove stale hashes
 - [ ] Server
   - [x] Overview showing: version, uptime, connections, peers, hashes
   - [x] Explore hashes
@@ -33,6 +33,3 @@ This ZeroNet Tracker depends on the ZeroNet Protocol library which is available 
 The ZeroNet Tracker can optionally be compiled with the `server` flag. If enabled a server using Rocket and Maud will make useful information about the status of the tracker available on `localhost:8000`, or at the `ROCKET_PORT` environment variable.
 
 It should be perfectly safe to make this available outside your network. Be aware that with low numbers of peers this information combined with a ZeroSites crawler could be used to deanonymize peers.
-
-### Influx
-The ZeroNet Tracker can be compiled with the `influx` flag. If enabled the tracker will send statistics to an influx database.

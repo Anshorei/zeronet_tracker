@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Ansho Rei <anshorei@zeroid.bit>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."
@@ -11,16 +11,16 @@ description = "A ZeroNet tracker written in Rust."
 server = ["maud", "rocket"]
 
 [dependencies]
-zeronet_protocol = { version = "0.1.3", registry = "cratez" }
-futures = "0.3"
-log = "0.4"
-pretty_env_logger = "0.4"
-serde = "1.0"
-serde_json = "1.0"
-serde_bytes = "0.11"
-base64 = "0.12"
-clap = "2.33"
+zeronet_protocol = { version = "~0.1.3", registry = "cratez" }
+futures = "~0.3"
+log = "~0.4"
+pretty_env_logger = "~0.4"
+serde = "~1.0"
+serde_json = "~1.0"
+serde_bytes = "~0.11"
+base64 = "~0.12"
+clap = "~2.33.0"
 
-maud = { version = "0.22", features = ["rocket"], optional = true }
-rocket = { version = "0.4", optional = true }
-rocket_contrib = "0.4"
+maud = { version = "~0.22", features = ["rocket"], optional = true }
+rocket = { version = "~0.4", optional = true }
+rocket_contrib = "~0.4"

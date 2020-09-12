@@ -1,7 +1,6 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use zeronet_protocol::Address;
 use std::collections::{HashMap, HashSet};
-use log::*;
 
 pub trait PeerDatabase {
   // Adds hashes for a peer, adding the peer if it is new

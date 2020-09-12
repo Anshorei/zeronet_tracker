@@ -1,15 +1,14 @@
 use crate::shared_state::SharedState;
 use crate::start_listener;
 use futures::executor::block_on;
-use std::sync::{Arc, Barrier, Mutex};
+use std::sync::{Arc, Mutex};
 use zeronet_protocol::{Address, ZeroConnection};
 
 fn start_tracker() {
-	std::env::set_var("PORT", "15442");
 	std::env::set_var("RUST_LOG", "zeronet_tracker=trace");
 
 	let shared_state = Arc::new(Mutex::new(SharedState::new()));
-	start_listener(shared_state);
+	start_listener(shared_state, 15442);
 }
 
 fn handshake() -> serde_json::Value {

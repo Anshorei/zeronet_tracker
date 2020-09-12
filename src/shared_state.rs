@@ -1,13 +1,11 @@
-use log::*;
-use std::collections::{HashMap, HashSet};
-use std::time::{Duration, Instant};
-use zeronet_protocol::Address;
-use crate::peer_db::{Peer, Hash, PeerDB, PeerDatabase};
+use std::time::Instant;
+use crate::peer_db::{PeerDB, PeerDatabase};
 
 pub struct SharedState {
 	pub peer_db: Box<dyn PeerDatabase + Send>,
 	pub start_time:   Instant,
-	pub connections:  usize,
+	pub opened_connections:  usize,
+	pub closed_connections: usize,
 	pub requests: usize,
 }
 
@@ -16,7 +14,8 @@ impl SharedState {
 		SharedState {
 			peer_db: Box::new(PeerDB::new()),
 			start_time:   Instant::now(),
-			connections:  0,
+			opened_connections:  0,
+			closed_connections: 0,
 			requests: 0,
 		}
 	}

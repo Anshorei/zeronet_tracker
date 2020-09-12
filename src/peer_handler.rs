@@ -1,12 +1,11 @@
 use crate::shared_state::{SharedState};
-use crate::peer_db::{Hash, Peer};
+use crate::peer_db::Peer;
 use futures::executor::block_on;
 use log::*;
 use serde_bytes::ByteBuf;
-use std::collections::{HashMap, HashSet};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use zeronet_protocol::error::Error;
 use zeronet_protocol::message::{templates, Request};
 use zeronet_protocol::Address;
@@ -28,13 +27,13 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
 
 			{
 				let mut shared_state = shared_state.lock().unwrap();
-				shared_state.connections += 1;
+				shared_state.opened_connections += 1;
 			}
 
 			handler.run();
 
 			let mut shared_state = shared_state.lock().unwrap();
-			shared_state.connections -= 1;
+			shared_state.closed_connections += 1;
 		});
 	} else {
 		error!("Could not detect address for stream.");
@@ -124,7 +123,7 @@ impl Handler {
 			Err(err) => return self.handle_invalid(req.req_id, err),
 		};
 
-		let mut announce = announce;
+		let announce = announce;
 		trace!("Announce: {:?}", announce);
 
 		let mut body = templates::AnnounceResponse::default();

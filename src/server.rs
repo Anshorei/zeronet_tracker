@@ -20,7 +20,7 @@ pub fn run(shared_state: Arc<Mutex<SharedState>>, port: u16) {
 		.unwrap();
 	config.set_port(port);
 	rocket::custom(config)
-		.mount("/", routes![overview, peers, hashes, stats])
+		.mount("/", routes![overview, peers, hashes, stats, hash_stats])
 		.manage(state)
 		.launch();
 }
@@ -95,7 +95,6 @@ struct Stats {
 	requests: usize,
 	peer_count: usize,
 	hash_count: usize,
-	hashes: HashMap<String, usize>,
 	uptime: u64,
 	version: String,
 }
@@ -104,8 +103,6 @@ struct Stats {
 fn stats(state: State<StateWrapper>) -> Json<Stats> {
 	let shared_state = state.shared_state.lock().unwrap();
 	let uptime = Instant::now() - shared_state.start_time;
-	let hashes = shared_state.peer_db.get_hashes();
-	let hashes: HashMap<String, usize> = hashes.iter().map(|(hash, peers)| (base64::encode(hash), *peers)).collect();
 
 	Json(Stats {
 		opened_connections: shared_state.opened_connections,
@@ -113,8 +110,27 @@ fn stats(state: State<StateWrapper>) -> Json<Stats> {
 		requests: shared_state.requests,
 		peer_count: shared_state.peer_db.get_peer_count(),
 		hash_count: shared_state.peer_db.get_hash_count(),
-		hashes: hashes,
 		uptime: uptime.as_secs(),
 		version: format!("v{}", crate_version!()),
 	})
+}
+
+#[derive(Serialize)]
+struct HashStat {
+	hash: String,
+	count: usize,
+}
+
+#[get("/hash_stats")]
+fn hash_stats(state: State<StateWrapper>) -> Json<Vec<HashStat>> {
+	let shared_state = state.shared_state.lock().unwrap();
+	let hashes = shared_state.peer_db.get_hashes();
+	let hashes: Vec<HashStat> = hashes.iter()
+		.map(|(hash, peers)| HashStat {
+			hash: base64::encode(hash),
+			count: *peers,
+		}).collect();
+	Json(
+		hashes
+	)
 }

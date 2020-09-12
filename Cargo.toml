@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Ansho Rei <anshorei@zeroid.bit>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."

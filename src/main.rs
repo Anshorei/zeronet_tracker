@@ -3,12 +3,12 @@ use log::*;
 use std::net::TcpListener;
 use std::sync::{Arc, Barrier, Mutex};
 
+mod args;
+mod janitor;
+mod peer_db;
 mod peer_handler;
 mod shared_state;
 mod tests;
-mod peer_db;
-mod janitor;
-mod args;
 
 #[cfg(feature = "server")]
 mod server;
@@ -18,19 +18,22 @@ use shared_state::SharedState;
 
 #[cfg(feature = "server")]
 fn start_server(shared_state: &Arc<Mutex<SharedState>>, port: u16) {
-	let moved_state = shared_state.clone();
-	std::thread::spawn(move || {
-		server::run(moved_state, port);
-	});
+  let moved_state = shared_state.clone();
+  std::thread::spawn(move || {
+    server::run(moved_state, port);
+  });
 }
 
 #[cfg(not(feature = "server"))]
 fn start_server(_shared_state: &Arc<Mutex<SharedState>>, _port: u16) {
-	info!("Compiled with server feature disabled, skipping.")
+  info!("Compiled with server feature disabled, skipping.")
 }
 
 fn start_janitor(shared_state: &Arc<Mutex<SharedState>>, interval: u16, timeout: u16) {
-	info!("Starting janitor with: interval={}s, timeout={}m", interval, timeout);
+  info!(
+    "Starting janitor with: interval={}s, timeout={}m",
+    interval, timeout
+  );
   let moved_state = shared_state.clone();
   std::thread::spawn(move || {
     janitor::run(moved_state, interval, timeout);
@@ -38,34 +41,34 @@ fn start_janitor(shared_state: &Arc<Mutex<SharedState>>, interval: u16, timeout:
 }
 
 fn start_listener(shared_state: Arc<Mutex<SharedState>>, port: u16) -> Arc<Barrier> {
-	let address = format!("127.0.0.1:{}", port);
-	let listener = TcpListener::bind(&address).unwrap();
-	trace!("Listening on {}!", address);
-	let barrier = Arc::new(Barrier::new(2));
+  let address = format!("127.0.0.1:{}", port);
+  let listener = TcpListener::bind(&address).unwrap();
+  trace!("Listening on {}!", address);
+  let barrier = Arc::new(Barrier::new(2));
 
-	let moved_barrier = barrier.clone();
-	std::thread::spawn(move || {
-		for stream in listener.incoming() {
-			if let Ok(stream) = stream {
-				spawn_handler(shared_state.clone(), stream);
-			} else {
-				error!("Could not handle incoming stream!");
-			}
-		}
-		moved_barrier.wait();
-	});
+  let moved_barrier = barrier.clone();
+  std::thread::spawn(move || {
+    for stream in listener.incoming() {
+      if let Ok(stream) = stream {
+        spawn_handler(shared_state.clone(), stream);
+      } else {
+        error!("Could not handle incoming stream!");
+      }
+    }
+    moved_barrier.wait();
+  });
 
-	barrier
+  barrier
 }
 
 fn main() {
-	let args = args::get_arguments();
-	pretty_env_logger::init_timed();
+  let args = args::get_arguments();
+  pretty_env_logger::init_timed();
 
-	let shared_state = SharedState::new();
-	let shared_state = Arc::new(Mutex::new(shared_state));
+  let shared_state = SharedState::new();
+  let shared_state = Arc::new(Mutex::new(shared_state));
 
   start_server(&shared_state, args.rocket_port);
   start_janitor(&shared_state, args.interval, args.timeout);
-	start_listener(shared_state, args.port).wait();
+  start_listener(shared_state, args.port).wait();
 }

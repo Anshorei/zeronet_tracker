@@ -5,14 +5,14 @@ use std::sync::{Arc, Mutex};
 use zeronet_protocol::{Address, ZeroConnection};
 
 fn start_tracker() {
-	std::env::set_var("RUST_LOG", "zeronet_tracker=trace");
+  std::env::set_var("RUST_LOG", "zeronet_tracker=trace");
 
-	let shared_state = Arc::new(Mutex::new(SharedState::new()));
-	start_listener(shared_state, 15442);
+  let shared_state = Arc::new(Mutex::new(SharedState::new()));
+  start_listener(shared_state, 15442);
 }
 
 fn handshake() -> serde_json::Value {
-	let text = r#"
+  let text = r#"
     {
       "crypt": null,
       "crypt_supported": ["tls-rsa"],
@@ -25,12 +25,12 @@ fn handshake() -> serde_json::Value {
       "target_ip": "192.168.1.13",
       "version": "0.5.6"
     }"#;
-	let value = serde_json::from_str(text).unwrap();
-	value
+  let value = serde_json::from_str(text).unwrap();
+  value
 }
 
 fn announce() -> serde_json::Value {
-	let text = r#"
+  let text = r#"
     {
       "hashes": [],
       "onions": [],
@@ -41,21 +41,21 @@ fn announce() -> serde_json::Value {
       "need_num": 20,
       "add": ["onion"]
     }"#;
-	let value = serde_json::from_str(text).unwrap();
-	value
+  let value = serde_json::from_str(text).unwrap();
+  value
 }
 
 #[test]
 fn test_handshake() {
-	start_tracker();
+  start_tracker();
 
-	let address = Address::parse("127.0.0.1:15442".to_string()).unwrap();
-	let mut conn = ZeroConnection::from_address(address).unwrap();
-	let handshake_future = conn.request("handshake", handshake());
-	let response = block_on(handshake_future).unwrap();
-	assert_eq!(response.to, conn.last_req_id());
+  let address = Address::parse("127.0.0.1:15442".to_string()).unwrap();
+  let mut conn = ZeroConnection::from_address(address).unwrap();
+  let handshake_future = conn.request("handshake", handshake());
+  let response = block_on(handshake_future).unwrap();
+  assert_eq!(response.to, conn.last_req_id());
 
-	let announce_future = conn.request("announce", announce());
-	let response = block_on(announce_future).unwrap();
-	assert_eq!(response.to, conn.last_req_id());
+  let announce_future = conn.request("announce", announce());
+  let response = block_on(announce_future).unwrap();
+  assert_eq!(response.to, conn.last_req_id());
 }

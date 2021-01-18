@@ -1,18 +1,18 @@
-use clap::{Arg, app_from_crate, crate_authors, crate_description, crate_version, crate_name};
+use clap::{app_from_crate, crate_authors, crate_description, crate_name, crate_version, Arg};
 
 pub struct Args {
-	pub rocket_port: u16,
-  pub port: u16,
-  pub interval: u16,
-	pub timeout: u16,
+  pub rocket_port: u16,
+  pub port:        u16,
+  pub interval:    u16,
+  pub timeout:     u16,
 }
 
 fn is_u16(v: String) -> Result<(), String> {
   let res: Result<u16, _> = v.parse();
   if res.is_ok() {
-    return Ok(())
+    return Ok(());
   } else {
-    return Err(format!("'{}' cannot be parsed to u16.", v))
+    return Err(format!("'{}' cannot be parsed to u16.", v));
   }
 }
 
@@ -48,25 +48,30 @@ pub fn get_arguments() -> Args {
         .default_value("50"),
     );
 
-	#[cfg(feature = "server")]
-	{
-		app = app
-		.arg(Arg::with_name("rocket_port")
-      .long("rocket_port")
-      .visible_alias("server_port")
-			.help("Port to serve the stats on.")
-      .env("ROCKET_PORT")
-      .validator(is_u16)
-			.default_value("8000"));
-	}
+  #[cfg(feature = "server")]
+  {
+    app = app.arg(
+      Arg::with_name("rocket_port")
+        .long("rocket_port")
+        .visible_alias("server_port")
+        .help("Port to serve the stats on.")
+        .env("ROCKET_PORT")
+        .validator(is_u16)
+        .default_value("8000"),
+    );
+  }
 
-	let matches = app.get_matches();
-	let args = Args{
+  let matches = app.get_matches();
+  let args = Args {
     rocket_port: matches.value_of("rocket_port").unwrap().parse().unwrap(),
-		port: matches.value_of("listener_port").unwrap().parse().unwrap(),
-    interval: matches.value_of("janitor_interval").unwrap().parse().unwrap(),
-    timeout: matches.value_of("timeout").unwrap().parse().unwrap(),
-	};
+    port:        matches.value_of("listener_port").unwrap().parse().unwrap(),
+    interval:    matches
+      .value_of("janitor_interval")
+      .unwrap()
+      .parse()
+      .unwrap(),
+    timeout:     matches.value_of("timeout").unwrap().parse().unwrap(),
+  };
 
-	args
+  args
 }

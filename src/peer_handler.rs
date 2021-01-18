@@ -17,12 +17,8 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
     let address = Address::from(address);
 
     std::thread::spawn(move || {
-      let connection = ZeroConnection::new(
-        address.clone(),
-        Box::new(stream.try_clone().unwrap()),
-        Box::new(stream),
-      )
-      .unwrap();
+      let connection =
+        ZeroConnection::new(Box::new(stream.try_clone().unwrap()), Box::new(stream)).unwrap();
       let mut handler = Handler::create(shared_state.clone(), connection, address);
 
       {

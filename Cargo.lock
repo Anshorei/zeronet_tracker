@@ -1511,9 +1511,9 @@ checksum = "3cbac2ed2ba24cc90f5e06485ac8c7c1e5449fe8911aef4d8877218af021a5b8"
 
 [[package]]
 name = "zeronet_protocol"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+http://localhost:43110/1CRAteZVBUYrnx8jj9x87A1zCnptrWFhPH/index"
-checksum = "3c553fbf58d52804edb0ccaacca3365ad76d25390a1df1fe876097306c38238f"
+checksum = "33ee0d901fde6bd0fd79cbe02399be6bb83642d565539ba28de6e9a53cb07c2c"
 dependencies = [
  "base64 0.13.0",
  "futures",
@@ -1532,7 +1532,7 @@ dependencies = [
 
 [[package]]
 name = "zeronet_tracker"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "base64 0.13.0",
  "clap",

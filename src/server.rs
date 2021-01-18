@@ -5,7 +5,6 @@ use maud::{html, Markup, PreEscaped};
 use rocket::{get, routes, Config, State};
 use rocket_contrib::json::Json;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 

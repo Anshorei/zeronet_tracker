@@ -8,6 +8,7 @@ mod janitor;
 mod peer_db;
 mod peer_handler;
 mod shared_state;
+#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "server")]

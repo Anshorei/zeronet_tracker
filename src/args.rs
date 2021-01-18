@@ -17,29 +17,36 @@ fn is_u16(v: String) -> Result<(), String> {
 }
 
 pub fn get_arguments() -> Args {
-	let mut app = app_from_crate!()
-		.arg(Arg::with_name("listener_port")
-			.short("p")
-      .long("port")
-      .visible_alias("listener_port")
-			.help("Port to listen on for peer connections.")
-      .env("PORT")
-      .validator(is_u16)
-      .default_value("15442"))
-    .arg(Arg::with_name("janitor_interval")
-      .short("i")
-      .long("interval")
-      .help("Interval for the janitor's cleanup of dear peers and stale hashes")
-      .env("JANITOR_INTERVAL")
-      .validator(is_u16)
-      .default_value("60"))
-		.arg(Arg::with_name("timeout")
-			.short("t")
-			.long("timeout")
-			.help("Number of minutes without announce before a peer is considered dead.")
-      .env("PEER_TIMEOUT")
-      .validator(is_u16)
-			.default_value("50"));
+  let mut app = app_from_crate!();
+  app = app
+    .arg(
+      Arg::with_name("listener_port")
+        .short("p")
+        .long("port")
+        .visible_alias("listener_port")
+        .help("Port to listen on for peer connections.")
+        .env("PORT")
+        .validator(is_u16)
+        .default_value("15442"),
+    )
+    .arg(
+      Arg::with_name("janitor_interval")
+        .short("i")
+        .long("interval")
+        .help("Interval for the janitor's cleanup of dear peers and stale hashes")
+        .env("JANITOR_INTERVAL")
+        .validator(is_u16)
+        .default_value("60"),
+    )
+    .arg(
+      Arg::with_name("timeout")
+        .short("t")
+        .long("timeout")
+        .help("Number of minutes without announce before a peer is considered dead.")
+        .env("PEER_TIMEOUT")
+        .validator(is_u16)
+        .default_value("50"),
+    );
 
 	#[cfg(feature = "server")]
 	{

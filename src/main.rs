@@ -25,7 +25,7 @@ fn start_server(shared_state: &Arc<Mutex<SharedState>>, port: u16) {
 }
 
 #[cfg(not(feature = "server"))]
-fn start_server(shared_state: &Arc<Mutex<SharedState>>, _port: u16) {
+fn start_server(_shared_state: &Arc<Mutex<SharedState>>, _port: u16) {
 	info!("Compiled with server feature disabled, skipping.")
 }
 

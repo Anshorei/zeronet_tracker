@@ -60,7 +60,7 @@ fn peers(state: State<StateWrapper>) -> Markup {
     h1 { "ZeroNet Tracker - Peer List" }
     ol {
       @for peer in shared_state.peer_db.get_peers().iter() {
-        li { (peer.address.to_string()) }
+        li { (format!("{}", peer.address)) }
       }
     }
   }
@@ -79,7 +79,7 @@ fn hashes(state: State<StateWrapper>) -> Markup {
     h1 { "ZeroNet Tracker - Hash List" }
     ol {
       @for (hash, peers) in hashes {
-        li { (format!("{} ({})", hash, peers)) }
+        li { (format!("{} ({} peers)", hash, peers)) }
       }
     }
   }

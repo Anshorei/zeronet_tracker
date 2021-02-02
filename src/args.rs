@@ -33,7 +33,7 @@ pub fn get_arguments() -> Args {
       Arg::with_name("janitor_interval")
         .short("i")
         .long("interval")
-        .help("Interval for the janitor's cleanup of dear peers and stale hashes")
+        .help("Interval for the janitor's cleanup of dead peers and stale hashes")
         .env("JANITOR_INTERVAL")
         .validator(is_u16)
         .default_value("60"),

@@ -6,11 +6,20 @@
 # ZeroNet Tracker
 This is a ZeroNet tracker written in Rust. It can keep track of a number of different peer types.
 
-# Roadmap
+## Installation
+
+### Prerequisites
+- Copy of the source code
+- Cargo + rustc nightly
+
+### Steps
+Run `cargo +nightly install --path .` in the local repository root
+
+## Roadmap
 Peertypes:
 - [x] IPV4 & IPV6
-- [ ] Onion v2 & v3
-- [ ] I2P b32
+- [x] Onion v2 & v3
+- [x] I2P b32
 - [ ] Loki
 
 Features:

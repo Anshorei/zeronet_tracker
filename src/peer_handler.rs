@@ -50,7 +50,7 @@ impl Handler {
     address: Address,
   ) -> Handler {
     Handler {
-      peer_id: "random shit".to_string(),
+      peer_id: String::new(),
       shared_state,
       connection,
       address,
@@ -190,6 +190,9 @@ impl Handler {
                 peers.ip_v6.push(bytes);
               }
               Address::OnionV2(_, _) => {
+                peers.onion_v2.push(bytes);
+              }
+              Address::OnionV3(_, _) => {
                 peers.onion_v2.push(bytes);
               }
               _ => {}

@@ -1,6 +1,7 @@
 use clap::{app_from_crate, crate_authors, crate_description, crate_name, crate_version, Arg};
 
 pub struct Args {
+  #[cfg(feature = "server")]
   pub rocket_port: u16,
   pub port:        u16,
   pub interval:    u16,
@@ -63,6 +64,7 @@ pub fn get_arguments() -> Args {
 
   let matches = app.get_matches();
   let args = Args {
+    #[cfg(feature = "server")]
     rocket_port: matches.value_of("rocket_port").unwrap().parse().unwrap(),
     port:        matches.value_of("listener_port").unwrap().parse().unwrap(),
     interval:    matches

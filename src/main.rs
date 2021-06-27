@@ -69,6 +69,7 @@ fn main() {
   let shared_state = SharedState::new();
   let shared_state = Arc::new(Mutex::new(shared_state));
 
+  #[cfg(feature = "server")]
   start_server(&shared_state, args.rocket_port);
   start_janitor(&shared_state, args.interval, args.timeout);
   start_listener(shared_state, args.port).wait();

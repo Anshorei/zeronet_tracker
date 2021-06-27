@@ -6,10 +6,12 @@ use serde_bytes::ByteBuf;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use zeronet_protocol::error::Error;
-use zeronet_protocol::message::{templates, Request};
-use zeronet_protocol::Address;
-use zeronet_protocol::ZeroConnection;
+use zeronet_protocol::{
+  error::Error,
+  message::{templates, Request},
+  PeerAddr as Address,
+  ZeroConnection
+};
 
 pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
   if let Ok(address) = stream.peer_addr() {
@@ -189,9 +191,11 @@ impl Handler {
               Address::IPV6(_, _) => {
                 peers.ip_v6.push(bytes);
               }
+              #[cfg(feature = "tor")]
               Address::OnionV2(_, _) => {
                 peers.onion_v2.push(bytes);
               }
+              #[cfg(feature = "tor")]
               Address::OnionV3(_, _) => {
                 peers.onion_v2.push(bytes);
               }

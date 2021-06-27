@@ -2,7 +2,7 @@ use crate::shared_state::SharedState;
 use crate::start_listener;
 use futures::executor::block_on;
 use std::sync::{Arc, Mutex};
-use zeronet_protocol::{Address, ZeroConnection};
+use zeronet_protocol::{PeerAddr, ZeroConnection};
 
 fn start_tracker() {
   std::env::set_var("RUST_LOG", "zeronet_tracker=trace");
@@ -49,7 +49,7 @@ fn announce() -> serde_json::Value {
 fn test_handshake() {
   start_tracker();
 
-  let address = Address::parse("127.0.0.1:15442".to_string()).unwrap();
+  let address = PeerAddr::parse("127.0.0.1:15442".to_string()).unwrap();
   let mut conn = ZeroConnection::from_address(address).unwrap();
   let handshake_future = conn.request("handshake", handshake());
   let response = block_on(handshake_future).unwrap();

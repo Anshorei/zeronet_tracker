@@ -199,6 +199,7 @@ impl Handler {
               Address::OnionV3(_, _) => {
                 peers.onion_v2.push(bytes);
               }
+              #[cfg(feature = "i2p")]
               _ => {}
             }
           });

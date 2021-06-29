@@ -46,7 +46,8 @@ fn announce() -> serde_json::Value {
 }
 
 #[test]
-fn test_handshake() {
+#[cfg(feature = "tor")]
+fn test_handshake_with_onion() {
   start_tracker();
 
   let address = PeerAddr::parse("127.0.0.1:15442".to_string()).unwrap();

@@ -8,7 +8,7 @@ fn start_tracker() {
   std::env::set_var("RUST_LOG", "zeronet_tracker=trace");
 
   let shared_state = Arc::new(Mutex::new(SharedState::new()));
-  start_listener(shared_state, 15442);
+  start_listener(shared_state, "localhost".to_string(), 15442);
 }
 
 fn handshake() -> serde_json::Value {

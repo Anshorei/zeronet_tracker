@@ -36,8 +36,8 @@ fn start_janitor(shared_state: &Arc<Mutex<SharedState>>, interval: u16, timeout:
   });
 }
 
-fn start_listener(shared_state: Arc<Mutex<SharedState>>, port: u16) -> Arc<Barrier> {
-  let address = format!("127.0.0.1:{}", port);
+fn start_listener(shared_state: Arc<Mutex<SharedState>>, address: String, port: u16) -> Arc<Barrier> {
+  let address = format!("{}:{}", address, port);
   let listener = TcpListener::bind(&address).unwrap();
   trace!("Listening on {}!", address);
   let barrier = Arc::new(Barrier::new(2));
@@ -67,5 +67,5 @@ fn main() {
   #[cfg(feature = "server")]
   start_server(&shared_state, args.rocket_port);
   start_janitor(&shared_state, args.interval, args.timeout);
-  start_listener(shared_state, args.port).wait();
+  start_listener(shared_state, args.address, args.port).wait();
 }

@@ -4,6 +4,7 @@ pub struct Args {
   #[cfg(feature = "server")]
   pub rocket_port: u16,
   pub port:        u16,
+  pub address:     String,
   pub interval:    u16,
   pub timeout:     u16,
 }
@@ -21,12 +22,20 @@ pub fn get_arguments() -> Args {
   let mut app = app_from_crate!();
   app = app
     .arg(
+      Arg::with_name("address")
+        .short("a")
+        .long("address")
+        .help("Address to listen on for peer connections.")
+        .env("ADDRESS")
+        .default_value("localhost"),
+    )
+    .arg(
       Arg::with_name("listener_port")
         .short("p")
         .long("port")
         .visible_alias("listener_port")
         .help("Port to listen on for peer connections.")
-        .env("PORT")
+        .env("LISTENER_PORT")
         .validator(is_u16)
         .default_value("15442"),
     )
@@ -58,7 +67,7 @@ pub fn get_arguments() -> Args {
         .help("Port to serve the stats on.")
         .env("ROCKET_PORT")
         .validator(is_u16)
-        .default_value("8000"),
+        .default_value("15441"),
     );
   }
 
@@ -67,6 +76,7 @@ pub fn get_arguments() -> Args {
     #[cfg(feature = "server")]
     rocket_port: matches.value_of("rocket_port").unwrap().parse().unwrap(),
     port:        matches.value_of("listener_port").unwrap().parse().unwrap(),
+    address:     matches.value_of("address").unwrap().to_string(),
     interval:    matches
       .value_of("janitor_interval")
       .unwrap()

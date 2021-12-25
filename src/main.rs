@@ -1,18 +1,18 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 use log::*;
 use std::net::TcpListener;
-use std::sync::{Arc, Barrier, Mutex};
+use std::sync::{Arc, Mutex};
 
 mod args;
 mod janitor;
 mod peer_db;
 mod peer_handler;
 mod shared_state;
-#[cfg(test)]
-mod tests;
-
 #[cfg(feature = "server")]
 mod server;
+
+#[cfg(test)]
+mod tests;
 
 use peer_handler::spawn_handler;
 use shared_state::SharedState;
@@ -36,25 +36,18 @@ fn start_janitor(shared_state: &Arc<Mutex<SharedState>>, interval: u16, timeout:
   });
 }
 
-fn start_listener(shared_state: Arc<Mutex<SharedState>>, address: String, port: u16) -> Arc<Barrier> {
+fn start_listener(shared_state: Arc<Mutex<SharedState>>, address: String, port: u16) {
   let address = format!("{}:{}", address, port);
   let listener = TcpListener::bind(&address).unwrap();
   trace!("Listening on {}!", address);
-  let barrier = Arc::new(Barrier::new(2));
 
-  let moved_barrier = barrier.clone();
-  std::thread::spawn(move || {
-    for stream in listener.incoming() {
-      if let Ok(stream) = stream {
-        spawn_handler(shared_state.clone(), stream);
-      } else {
-        error!("Could not handle incoming stream!");
-      }
+  for stream in listener.incoming() {
+    if let Ok(stream) = stream {
+      spawn_handler(shared_state.clone(), stream);
+    } else {
+      error!("Could not handle incoming stream!");
     }
-    moved_barrier.wait();
-  });
-
-  barrier
+  }
 }
 
 fn main() {
@@ -67,5 +60,5 @@ fn main() {
   #[cfg(feature = "server")]
   start_server(&shared_state, args.rocket_port);
   start_janitor(&shared_state, args.interval, args.timeout);
-  start_listener(shared_state, args.address, args.port).wait();
+  start_listener(shared_state, args.address, args.port);
 }

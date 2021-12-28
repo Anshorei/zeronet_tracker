@@ -28,6 +28,6 @@ serde_bytes = "~0.11"
 base64 = "~0.13"
 clap = "~2.34.0"
 
-maud = { version = "~0.22", features = ["rocket"], optional = true }
+maud = { version = "~0.23", features = ["rocket"], optional = true }
 rocket = { version = "~0.4", optional = true }
 rocket_contrib = "~0.4"

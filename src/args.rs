@@ -1,4 +1,4 @@
-use clap::{app_from_crate, crate_authors, crate_description, crate_name, crate_version, Arg};
+use clap::{app_from_crate, Arg};
 
 pub struct Args {
   #[cfg(feature = "server")]
@@ -9,7 +9,7 @@ pub struct Args {
   pub timeout:     u16,
 }
 
-fn is_u16(v: String) -> Result<(), String> {
+fn is_u16(v: &str) -> Result<(), String> {
   let res: Result<u16, _> = v.parse();
   if res.is_ok() {
     return Ok(());
@@ -22,16 +22,16 @@ pub fn get_arguments() -> Args {
   let mut app = app_from_crate!();
   app = app
     .arg(
-      Arg::with_name("address")
-        .short("a")
+      Arg::new("address")
+        .short('a')
         .long("address")
         .help("Address to listen on for peer connections.")
         .env("ADDRESS")
         .default_value("localhost"),
     )
     .arg(
-      Arg::with_name("listener_port")
-        .short("p")
+      Arg::new("listener_port")
+        .short('p')
         .long("port")
         .visible_alias("listener_port")
         .help("Port to listen on for peer connections.")
@@ -40,8 +40,8 @@ pub fn get_arguments() -> Args {
         .default_value("15442"),
     )
     .arg(
-      Arg::with_name("janitor_interval")
-        .short("i")
+      Arg::new("janitor_interval")
+        .short('i')
         .long("interval")
         .help("Interval for the janitor's cleanup of dead peers and stale hashes")
         .env("JANITOR_INTERVAL")
@@ -49,8 +49,8 @@ pub fn get_arguments() -> Args {
         .default_value("60"),
     )
     .arg(
-      Arg::with_name("timeout")
-        .short("t")
+      Arg::new("timeout")
+        .short('t')
         .long("timeout")
         .help("Number of minutes without announce before a peer is considered dead.")
         .env("PEER_TIMEOUT")
@@ -61,7 +61,7 @@ pub fn get_arguments() -> Args {
   #[cfg(feature = "server")]
   {
     app = app.arg(
-      Arg::with_name("rocket_port")
+      Arg::new("rocket_port")
         .long("rocket_port")
         .visible_alias("server_port")
         .help("Port to serve the stats on.")

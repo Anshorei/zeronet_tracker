@@ -142,9 +142,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.0.5"
+version = "3.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6f34b09b9ee8c7c7b400fe2f8df39cafc9538b03d6ba7f4ae13e4cb90bfbb7d"
+checksum = "12e8611f9ae4e068fa3e56931fded356ff745e70987ff76924a6e0ab1c8ef2e3"
 dependencies = [
  "atty",
  "bitflags",
@@ -1530,9 +1530,9 @@ checksum = "9fc79f4a1e39857fc00c3f662cbf2651c771f00e9c15fe2abc341806bd46bd71"
 
 [[package]]
 name = "zeronet_protocol"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0461b321c0950f3cdfac96b12f8b61c349f584dd3efe1c2efb22b4817581359"
+checksum = "cfe26b468757044d2eae757c9e100a7b4e025eab8705c6765a322b18c9cefecf"
 dependencies = [
  "base64 0.13.0",
  "futures",
@@ -1553,7 +1553,7 @@ dependencies = [
 
 [[package]]
 name = "zeronet_tracker"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "base64 0.13.0",
  "clap",

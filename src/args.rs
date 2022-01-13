@@ -75,14 +75,14 @@ pub fn get_arguments() -> Args {
   let args = Args {
     #[cfg(feature = "server")]
     rocket_port: matches.value_of("rocket_port").unwrap().parse().unwrap(),
-    port:        matches.value_of("listener_port").unwrap().parse().unwrap(),
-    address:     matches.value_of("address").unwrap().to_string(),
-    interval:    matches
+    port: matches.value_of("listener_port").unwrap().parse().unwrap(),
+    address: matches.value_of("address").unwrap().to_string(),
+    interval: matches
       .value_of("janitor_interval")
       .unwrap()
       .parse()
       .unwrap(),
-    timeout:     matches.value_of("timeout").unwrap().parse().unwrap(),
+    timeout: matches.value_of("timeout").unwrap().parse().unwrap(),
   };
 
   args

@@ -9,8 +9,7 @@ use std::time::Instant;
 use zeronet_protocol::{
   error::Error,
   message::{templates, Request},
-  PeerAddr as Address,
-  ZeroConnection
+  PeerAddr as Address, ZeroConnection,
 };
 
 pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
@@ -69,7 +68,9 @@ impl Handler {
       }
       if let Err(err) = req {
         match err {
-          Error::Io(err) => info!("Connection terminated! {:?}", err),
+          Error::Io(_) | Error::ConnectionClosed => {
+            info!("Connection terminated: {}", self.address.to_string())
+          }
           _ => error!("Encountered unexpected error: {:?}", err),
         }
         break;

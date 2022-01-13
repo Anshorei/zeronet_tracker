@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.12"
+version = "0.1.13"
 authors = ["Ansho Rei <anshorei@protonmail.com>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."
@@ -18,7 +18,7 @@ tor = ["zeronet_protocol/tor"]
 i2p = ["zeronet_protocol/i2p"]
 
 [dependencies]
-zeronet_protocol = "~0.1.7"
+zeronet_protocol = "~0.1.9"
 futures = "~0.3"
 log = "~0.4"
 pretty_env_logger = "~0.4"

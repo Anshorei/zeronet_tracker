@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::time::Instant;
+use std::time::SystemTime;
 use zeronet_protocol::PeerAddr as Address;
 
 pub trait PeerDatabase {
@@ -19,7 +19,7 @@ pub trait PeerDatabase {
 
   // Remove peers that have not announced since
   // the given timestamp
-  fn cleanup_peers(&mut self, timestamp: Instant) -> usize;
+  fn cleanup_peers(&mut self, timestamp: SystemTime) -> usize;
   // Remove peerless hashes
   fn cleanup_hashes(&mut self) -> usize;
 }
@@ -27,14 +27,14 @@ pub trait PeerDatabase {
 #[derive(Clone)]
 pub struct Peer {
   pub address:    Address,
-  pub date_added: Instant,
-  pub last_seen:  Instant,
+  pub date_added: SystemTime,
+  pub last_seen:  SystemTime,
 }
 
 #[derive(Clone)]
 pub struct Hash {
   pub hash:       Vec<u8>,
-  pub date_added: Instant,
+  pub date_added: SystemTime,
 }
 
 pub struct PeerDB {
@@ -59,7 +59,7 @@ impl PeerDB {
     }
     let new_hash = Hash {
       hash:       hash.clone(),
-      date_added: Instant::now(),
+      date_added: SystemTime::now(),
     };
     self.hashes.insert(hash.clone(), new_hash);
     self.hash_to_peer.insert(hash.clone(), HashSet::new());
@@ -133,7 +133,7 @@ impl PeerDatabase for PeerDB {
     self.hashes.len()
   }
 
-  fn cleanup_peers(&mut self, timestamp: Instant) -> usize {
+  fn cleanup_peers(&mut self, timestamp: SystemTime) -> usize {
     let dead_peers: Vec<_> = self
       .peers
       .values()

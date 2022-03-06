@@ -6,7 +6,6 @@ use rocket::{get, routes, Config, State};
 use rocket_contrib::json::Json;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
 struct StateWrapper {
   shared_state: Arc<Mutex<SharedState>>,
@@ -26,7 +25,7 @@ pub fn run(shared_state: Arc<Mutex<SharedState>>, port: u16) {
 #[get("/")]
 fn overview(state: State<StateWrapper>) -> Markup {
   let shared_state = state.shared_state.lock().unwrap();
-  let uptime = shared_state.start_time.elapsed().as_secs_f64() / 60f64 / 60f64;
+  let uptime = shared_state.start_time.elapsed().unwrap().as_secs_f64() / 60f64 / 60f64;
   let active_connections = shared_state.opened_connections - shared_state.closed_connections;
   html! {
     h1 { "ZeroNet Tracker" }
@@ -99,7 +98,6 @@ struct Stats {
 #[get("/stats")]
 fn stats(state: State<StateWrapper>) -> Json<Stats> {
   let shared_state = state.shared_state.lock().unwrap();
-  let uptime = Instant::now() - shared_state.start_time;
 
   Json(Stats {
     opened_connections: shared_state.opened_connections,
@@ -107,7 +105,7 @@ fn stats(state: State<StateWrapper>) -> Json<Stats> {
     requests:           shared_state.requests,
     peer_count:         shared_state.peer_db.get_peer_count(),
     hash_count:         shared_state.peer_db.get_hash_count(),
-    uptime:             uptime.as_secs(),
+    uptime:             shared_state.start_time.elapsed().unwrap().as_secs(),
     version:            format!("v{}", crate_version!()),
   })
 }

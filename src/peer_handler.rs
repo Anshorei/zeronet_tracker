@@ -5,7 +5,7 @@ use log::*;
 use serde_bytes::ByteBuf;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::SystemTime;
 use zeronet_protocol::{
   error::Error,
   message::{templates, Request},
@@ -136,11 +136,11 @@ impl Handler {
       let peer = shared_state.peer_db.get_peer(&address);
       let date_added = match peer {
         Some(peer) => peer.date_added,
-        None => Instant::now(),
+        None => SystemTime::now(),
       };
       let peer = Peer {
         address: address,
-        last_seen: Instant::now(),
+        last_seen: SystemTime::now(),
         date_added,
       };
 
@@ -166,7 +166,7 @@ impl Handler {
               Ok(onion) => {
                 let peer = Peer {
                   address: onion,
-                  last_seen: Instant::now(),
+                  last_seen: SystemTime::now(),
                   date_added,
                 };
                 shared_state.peer_db.update_peer(peer, vec![hash.clone()]);

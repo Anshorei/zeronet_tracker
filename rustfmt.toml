@@ -1,3 +1,4 @@
 hard_tabs = false
 tab_spaces = 2
 struct_field_align_threshold = 20
+group_imports = "StdExternalCrate"

@@ -13,8 +13,9 @@ license = "WTFPL"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-server = ["maud", "rocket", "rocket_contrib"]
 metrics = [ "server", "prometheus", "lazy_static" ]
+server = ["maud", "rocket", "rocket_contrib" ]
+sql = [ "sqlite" ]
 tor = ["zeronet_protocol/tor"]
 i2p = ["zeronet_protocol/i2p"]
 
@@ -32,5 +33,6 @@ clap = { version = "~3.0", features = [ "cargo", "env" ] }
 prometheus = { version = "~0.13", features = [ "process" ], optional = true }
 lazy_static = { version = "~1.4", optional = true }
 maud = { version = "~0.23", features = [ "rocket" ], optional = true }
+sqlite = { version = "~0.26", optional = true }
 rocket = { version = "~0.4", optional = true }
 rocket_contrib = { version = "~0.4", optional = true }

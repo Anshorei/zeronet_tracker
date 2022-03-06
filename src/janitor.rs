@@ -1,8 +1,10 @@
-use crate::shared_state::SharedState;
-use log::*;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
+
+use log::*;
+
+use crate::shared_state::SharedState;
 
 pub fn run(shared_state: Arc<Mutex<SharedState>>, interval: u16, timeout: u16) {
   loop {

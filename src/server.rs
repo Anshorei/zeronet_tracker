@@ -3,18 +3,18 @@ use std::sync::{Arc, Mutex};
 use clap::crate_version;
 use log::*;
 use maud::{html, Markup, PreEscaped};
+#[cfg(feature = "metrics")]
+use prometheus::{Encoder, TextEncoder};
+#[cfg(feature = "metrics")]
+use rocket::response::content;
 use rocket::{get, routes, Config, State};
 use rocket_contrib::json::Json;
 use serde::Serialize;
 
 #[cfg(feature = "metrics")]
-use prometheus::{Encoder, TextEncoder};
-#[cfg(feature = "metrics")]
-use rocket::response::content;
-
-use crate::shared_state::SharedState;
-#[cfg(feature = "metrics")]
 use crate::metrics;
+use crate::peer_db::get_peer_db_type;
+use crate::shared_state::SharedState;
 
 struct StateWrapper {
   shared_state: Arc<Mutex<SharedState>>,
@@ -46,6 +46,7 @@ fn overview(state: State<StateWrapper>) -> Markup {
   html! {
     h1 { "ZeroNet Tracker" }
     p { "Version: v" (crate_version!()) }
+    p { "PeerDB: " (get_peer_db_type()) }
     p { "Uptime: " (format!("{:.2}", uptime)) "h" }
     p {
       a href="/peers" { "Peers: " (shared_state.peer_db.get_peer_count()) }
@@ -101,7 +102,7 @@ fn hashes(state: State<StateWrapper>) -> Markup {
   let hashes = shared_state.peer_db.get_hashes();
   let hashes = hashes
     .iter()
-    .map(|(hash, peers)| (base64::encode(hash), peers));
+    .map(|(hash, peers)| (base64::encode(&hash.0), peers));
   html! {
     (PreEscaped(STYLE))
     a href="/" { ("Back") }
@@ -141,7 +142,7 @@ fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
 
 #[cfg(feature = "metrics")]
 #[get("/prometheus")]
-fn stats_prometheus(state: State<StateWrapper>) -> content::Plain::<Vec<u8>> {
+fn stats_prometheus(state: State<StateWrapper>) -> content::Plain<Vec<u8>> {
   let shared_state = state.shared_state.lock().unwrap();
 
   metrics::PEER_GAUGE.set(shared_state.peer_db.get_peer_count() as i64);
@@ -168,7 +169,7 @@ fn hash_stats(state: State<StateWrapper>) -> Json<Vec<HashStat>> {
   let hashes: Vec<HashStat> = hashes
     .iter()
     .map(|(hash, peers)| HashStat {
-      hash:  base64::encode(hash),
+      hash:  base64::encode(&hash.0),
       count: *peers,
     })
     .collect();

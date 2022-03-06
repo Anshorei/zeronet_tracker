@@ -11,10 +11,10 @@ use zeronet_protocol::{
   PeerAddr as Address, ZeroConnection,
 };
 
-use crate::peer_db::Peer;
-use crate::shared_state::SharedState;
 #[cfg(feature = "metrics")]
 use crate::metrics;
+use crate::peer_db::{Hash, Peer};
+use crate::shared_state::SharedState;
 
 pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
   if let Ok(address) = stream.peer_addr() {
@@ -146,17 +146,17 @@ impl Handler {
         date_added,
       };
 
-      let hashes: Vec<Vec<u8>> = announce
+      let hashes: Vec<Hash> = announce
         .hashes
         .iter()
-        .map(|buf| buf.clone().into_vec())
+        .map(|buf| Hash(buf.clone().into_vec()))
         .collect();
       if announce.onions.is_empty() {
         let peer_address = peer.address.to_string();
-        let result = shared_state.peer_db.update_peer(peer, hashes.clone());
-        match result {
-          Some(_) => info!("Updated peer {} for {} hashes", peer_address, hashes.len()),
-          None => info!("Added peer {} for {} hashes", peer_address, hashes.len()),
+        let peer_already_known = shared_state.peer_db.update_peer(peer, hashes.clone());
+        match peer_already_known {
+          true => info!("Updated peer {} for {} hashes", peer_address, hashes.len()),
+          false => info!("Added peer {} for {} hashes", peer_address, hashes.len()),
         }
       } else {
         announce

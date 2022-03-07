@@ -1,4 +1,5 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![cfg_attr(feature = "server", feature(proc_macro_hygiene, decl_macro))]
+//#![feature(proc_macro_hygiene, decl_macro)]
 use clap::{crate_name, crate_version};
 use log::*;
 use std::net::TcpListener;

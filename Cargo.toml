@@ -13,7 +13,7 @@ license = "WTFPL"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-server = ["maud", "rocket"]
+server = ["maud", "rocket", "rocket_contrib"]
 tor = ["zeronet_protocol/tor"]
 i2p = ["zeronet_protocol/i2p"]
 
@@ -30,4 +30,4 @@ clap = { version = "~3.0", features = [ "cargo", "env" ] }
 
 maud = { version = "~0.23", features = ["rocket"], optional = true }
 rocket = { version = "~0.4", optional = true }
-rocket_contrib = "~0.4"
+rocket_contrib = { version = "~0.4", optional = true }

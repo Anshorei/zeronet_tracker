@@ -1,8 +1,10 @@
+use std::sync::{Arc, Mutex};
+
+use futures::executor::block_on;
+use zeronet_protocol::{PeerAddr, ZeroConnection};
+
 use crate::shared_state::SharedState;
 use crate::start_listener;
-use futures::executor::block_on;
-use std::sync::{Arc, Mutex};
-use zeronet_protocol::{PeerAddr, ZeroConnection};
 
 fn start_tracker() {
   std::env::set_var("RUST_LOG", "zeronet_tracker=trace");
@@ -46,7 +48,7 @@ fn announce() -> serde_json::Value {
 }
 
 #[test]
-#[cfg(feature = "tor")]
+#[cfg(not(feature = "tor"))]
 fn test_handshake_with_onion() {
   start_tracker();
 

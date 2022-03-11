@@ -20,7 +20,6 @@ Peertypes:
 - [x] IPV4 & IPV6
 - [x] Onion v2 & v3
 - [x] I2P b32
-- [ ] Loki
 
 Features:
 - [x] Remove dead peers
@@ -31,7 +30,8 @@ Features:
     - [ ] Option to crawl ZeroSites for hashes
   - [x] Explore peers
   - [ ] Show log (this should not be publicly accessible)
-- [ ] Influx
+- [x] Metrics
+  - [x] Endpoint for Prometheus scraper
 
 # Building
 This ZeroNet Tracker depends on the ZeroNet Protocol library which is available from [the Cratez Rust Registry](/1CRAteZVBUYrnx8jj9x87A1zCnptrWFhPH), information on how to add Cratez to your cargo's registry configuration can be found on the site.

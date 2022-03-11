@@ -1,11 +1,20 @@
-use crate::shared_state::SharedState;
+use std::sync::{Arc, Mutex};
+
 use clap::crate_version;
 use log::*;
 use maud::{html, Markup, PreEscaped};
 use rocket::{get, routes, Config, State};
 use rocket_contrib::json::Json;
 use serde::Serialize;
-use std::sync::{Arc, Mutex};
+
+#[cfg(feature = "metrics")]
+use prometheus::{Encoder, TextEncoder};
+#[cfg(feature = "metrics")]
+use rocket::response::content;
+
+use crate::shared_state::SharedState;
+#[cfg(feature = "metrics")]
+use crate::metrics;
 
 struct StateWrapper {
   shared_state: Arc<Mutex<SharedState>>,
@@ -16,8 +25,15 @@ pub fn run(shared_state: Arc<Mutex<SharedState>>, port: u16) {
   let state = StateWrapper { shared_state };
   let mut config = Config::active().unwrap();
   config.set_port(port);
+
+  #[cfg(not(feature = "metrics"))]
+  let stats_routes = routes![];
+  #[cfg(feature = "metrics")]
+  let stats_routes = routes![stats_json, stats_prometheus];
+
   rocket::custom(config)
-    .mount("/", routes![overview, peers, hashes, stats, hash_stats])
+    .mount("/", routes![overview, peers, hashes, hash_stats])
+    .mount("/stats/", stats_routes)
     .manage(state)
     .launch();
 }
@@ -26,20 +42,34 @@ pub fn run(shared_state: Arc<Mutex<SharedState>>, port: u16) {
 fn overview(state: State<StateWrapper>) -> Markup {
   let shared_state = state.shared_state.lock().unwrap();
   let uptime = shared_state.start_time.elapsed().unwrap().as_secs_f64() / 60f64 / 60f64;
-  let active_connections = shared_state.opened_connections - shared_state.closed_connections;
+
   html! {
     h1 { "ZeroNet Tracker" }
     p { "Version: v" (crate_version!()) }
     p { "Uptime: " (format!("{:.2}", uptime)) "h" }
-    p { "Active Connections: " (active_connections) "/" (shared_state.opened_connections) }
     p {
       a href="/peers" { "Peers: " (shared_state.peer_db.get_peer_count()) }
     }
     p {
       a href="/hashes" { "Hashes: " (shared_state.peer_db.get_hash_count()) }
     }
+    (stat_links())
+  }
+}
+
+#[cfg(not(feature = "metrics"))]
+fn stat_links() -> Markup {
+  html! {}
+}
+
+#[cfg(feature = "metrics")]
+fn stat_links() -> Markup {
+  html! {
     p {
-      a href="/stats" { "View stats in JSON format" }
+      a href="/stats/json" { "Data in JSON format" }
+    }
+    p {
+      a href="/stats/prometheus" { "Prometheus scrape URL" }
     }
   }
 }
@@ -88,26 +118,41 @@ fn hashes(state: State<StateWrapper>) -> Markup {
 struct Stats {
   opened_connections: usize,
   closed_connections: usize,
-  requests:           usize,
   peer_count:         usize,
   hash_count:         usize,
   uptime:             u64,
   version:            String,
 }
 
-#[get("/stats")]
-fn stats(state: State<StateWrapper>) -> Json<Stats> {
+#[cfg(feature = "metrics")]
+#[get("/json")]
+fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
   let shared_state = state.shared_state.lock().unwrap();
 
   Json(Stats {
-    opened_connections: shared_state.opened_connections,
-    closed_connections: shared_state.closed_connections,
-    requests:           shared_state.requests,
+    opened_connections: metrics::OPENED_CONNECTIONS.get() as usize,
+    closed_connections: metrics::CLOSED_CONNECTIONS.get() as usize,
     peer_count:         shared_state.peer_db.get_peer_count(),
     hash_count:         shared_state.peer_db.get_hash_count(),
     uptime:             shared_state.start_time.elapsed().unwrap().as_secs(),
     version:            format!("v{}", crate_version!()),
   })
+}
+
+#[cfg(feature = "metrics")]
+#[get("/prometheus")]
+fn stats_prometheus(state: State<StateWrapper>) -> content::Plain::<Vec<u8>> {
+  let shared_state = state.shared_state.lock().unwrap();
+
+  metrics::PEER_GAUGE.set(shared_state.peer_db.get_peer_count() as i64);
+  metrics::HASH_GAUGE.set(shared_state.peer_db.get_hash_count() as i64);
+
+  let encoder = TextEncoder::new();
+  let mut buffer = vec![];
+  let metric_families = prometheus::gather();
+  encoder.encode(&metric_families, &mut buffer).unwrap();
+
+  content::Plain::<Vec<u8>>(buffer)
 }
 
 #[derive(Serialize)]

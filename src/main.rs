@@ -9,9 +9,12 @@ mod args;
 mod janitor;
 mod peer_db;
 mod peer_handler;
+mod shared_state;
+
 #[cfg(feature = "server")]
 mod server;
-mod shared_state;
+#[cfg(feature = "metrics")]
+mod metrics;
 
 #[cfg(test)]
 mod tests;

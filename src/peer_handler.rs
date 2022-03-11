@@ -1,16 +1,20 @@
-use crate::peer_db::Peer;
-use crate::shared_state::SharedState;
-use futures::executor::block_on;
-use log::*;
-use serde_bytes::ByteBuf;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
+
+use futures::executor::block_on;
+use log::*;
+use serde_bytes::ByteBuf;
 use zeronet_protocol::{
   error::Error,
   message::{templates, Request},
   PeerAddr as Address, ZeroConnection,
 };
+
+use crate::peer_db::Peer;
+use crate::shared_state::SharedState;
+#[cfg(feature = "metrics")]
+use crate::metrics;
 
 pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
   if let Ok(address) = stream.peer_addr() {
@@ -22,15 +26,13 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
         ZeroConnection::new(Box::new(stream.try_clone().unwrap()), Box::new(stream)).unwrap();
       let mut handler = Handler::create(shared_state.clone(), connection, address);
 
-      {
-        let mut shared_state = shared_state.lock().unwrap();
-        shared_state.opened_connections += 1;
-      }
+      #[cfg(feature = "metrics")]
+      metrics::OPENED_CONNECTIONS.inc();
 
       handler.run();
 
-      let mut shared_state = shared_state.lock().unwrap();
-      shared_state.closed_connections += 1;
+      #[cfg(feature = "metrics")]
+      metrics::CLOSED_CONNECTIONS.inc();
     });
   } else {
     error!("Could not detect address for stream.");
@@ -62,10 +64,10 @@ impl Handler {
     loop {
       trace!("Waiting for data...");
       let req = block_on(self.connection.recv());
-      {
-        let mut shared_state = self.shared_state.lock().unwrap();
-        shared_state.requests += 1;
-      }
+
+      #[cfg(feature = "metrics")]
+      metrics::REQUEST_COUNTER.inc();
+
       if let Err(err) = req {
         match err {
           Error::Io(_) | Error::ConnectionClosed => {

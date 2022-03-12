@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use prometheus::{IntCounter, IntGauge, register_int_counter, register_int_gauge};
+use prometheus::{register_int_counter, register_int_gauge, IntCounter, IntGauge};
 
 lazy_static! {
   pub static ref PEER_GAUGE: IntGauge = register_int_gauge!("peers", "Peers in database").unwrap();

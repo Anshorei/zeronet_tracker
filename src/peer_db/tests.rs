@@ -25,11 +25,15 @@ fn test_update_peer() {
   };
 
   assert_eq!(
-    peer_db.update_peer(peer1, hashes.clone()),
+    peer_db.update_peer(peer1, hashes.clone()).unwrap(),
     false,
     "Peer inserted"
   );
-  assert_eq!(peer_db.update_peer(peer2, hashes), true, "Peer updated");
+  assert_eq!(
+    peer_db.update_peer(peer2, hashes).unwrap(),
+    true,
+    "Peer updated"
+  );
 }
 
 #[test]
@@ -42,9 +46,11 @@ fn test_remove_peer() {
     date_added: SystemTime::now(),
   };
 
-  peer_db.update_peer(peer.clone(), hashes);
-  peer_db.remove_peer(&peer.address);
-  assert_eq!(peer_db.get_peer_count(), 0);
+  peer_db
+    .update_peer(peer.clone(), hashes)
+    .expect("Could not update peer");
+  assert!(peer_db.remove_peer(&peer.address).is_ok());
+  assert_eq!(peer_db.get_peer_count().unwrap(), 0);
 }
 
 #[test]
@@ -56,9 +62,11 @@ fn test_get_peer() {
     last_seen:  SystemTime::now(),
     date_added: SystemTime::now(),
   };
-  peer_db.update_peer(peer, vec![hash]);
+  peer_db
+    .update_peer(peer, vec![hash])
+    .expect("Could not update peer");
 
-  assert_eq!(peer_db.get_peer_count(), 1);
+  assert_eq!(peer_db.get_peer_count().unwrap(), 1);
 }
 
 #[test]
@@ -71,9 +79,11 @@ fn test_get_peer_count() {
     date_added: SystemTime::now(),
   };
 
-  assert_eq!(peer_db.get_peer_count(), 0);
-  peer_db.update_peer(peer, vec![hash]);
-  assert_eq!(peer_db.get_peer_count(), 1);
+  assert_eq!(peer_db.get_peer_count().unwrap(), 0);
+  peer_db
+    .update_peer(peer, vec![hash])
+    .expect("Could not update peer");
+  assert_eq!(peer_db.get_peer_count().unwrap(), 1);
 }
 
 #[test]
@@ -86,19 +96,23 @@ fn test_get_hash_count() {
     date_added: SystemTime::now(),
   };
 
-  assert_eq!(peer_db.get_hash_count(), 0);
-  peer_db.update_peer(peer, vec![hash]);
-  assert_eq!(peer_db.get_hash_count(), 1);
+  assert_eq!(peer_db.get_hash_count().unwrap(), 0);
+  peer_db
+    .update_peer(peer, vec![hash])
+    .expect("Could not update peer");
+  assert_eq!(peer_db.get_hash_count().unwrap(), 1);
 }
 
 #[test]
 fn test_cleanup_peers() {
   let mut peer_db = PeerDB::new().unwrap();
-  peer_db.cleanup_peers(SystemTime::now());
+  let result = peer_db.cleanup_peers(SystemTime::now());
+  assert!(result.is_ok());
 }
 
 #[test]
 fn test_cleanup_hashes() {
   let mut peer_db = PeerDB::new().unwrap();
-  peer_db.cleanup_hashes();
+  let result = peer_db.cleanup_hashes();
+  assert!(result.is_ok());
 }

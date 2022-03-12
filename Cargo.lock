@@ -1746,5 +1746,6 @@ dependencies = [
  "serde_bytes",
  "serde_json",
  "sqlite",
+ "thiserror",
  "zeronet_protocol",
 ]

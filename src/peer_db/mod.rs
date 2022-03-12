@@ -28,24 +28,26 @@ pub struct Peer {
 pub struct Hash(pub Vec<u8>);
 
 pub trait PeerDatabase {
+  type Error;
+
   // Adds hashes for a peer, adding the peer if it is new.
   // Returns true if the peer was update, and false if it was inserted.
-  fn update_peer(&mut self, peer: Peer, hashes: Vec<Hash>) -> bool;
+  fn update_peer(&mut self, peer: Peer, hashes: Vec<Hash>) -> Result<bool, Self::Error>;
   // Remove a peer, returning it if it exists
-  fn remove_peer(&mut self, peer_address: &Address) -> Option<Peer>;
+  fn remove_peer(&mut self, peer_address: &Address) -> Result<Option<Peer>, Self::Error>;
 
-  fn get_peer(&self, peer_address: &Address) -> Option<Peer>;
-  fn get_peers(&self) -> Vec<Peer>;
-  fn get_peers_for_hash(&self, hash: &Hash) -> Vec<Peer>;
+  fn get_peer(&self, peer_address: &Address) -> Result<Option<Peer>, Self::Error>;
+  fn get_peers(&self) -> Result<Vec<Peer>, Self::Error>;
+  fn get_peers_for_hash(&self, hash: &Hash) -> Result<Vec<Peer>, Self::Error>;
 
-  fn get_hashes(&self) -> Vec<(Hash, usize)>;
+  fn get_hashes(&self) -> Result<Vec<(Hash, usize)>, Self::Error>;
 
-  fn get_peer_count(&self) -> usize;
-  fn get_hash_count(&self) -> usize;
+  fn get_peer_count(&self) -> Result<usize, Self::Error>;
+  fn get_hash_count(&self) -> Result<usize, Self::Error>;
 
   // Remove peers that have not announced since
   // the given timestamp
-  fn cleanup_peers(&mut self, timestamp: SystemTime) -> usize;
+  fn cleanup_peers(&mut self, timestamp: SystemTime) -> Result<usize, Self::Error>;
   // Remove peerless hashes
-  fn cleanup_hashes(&mut self) -> usize;
+  fn cleanup_hashes(&mut self) -> Result<usize, Self::Error>;
 }

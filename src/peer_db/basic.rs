@@ -5,6 +5,8 @@ use zeronet_protocol::PeerAddr as Address;
 
 use super::{Hash, Peer, PeerDatabase};
 
+pub type Error = ();
+
 #[derive(Clone)]
 pub struct StoredHash {
   pub hash:       Hash,
@@ -49,23 +51,24 @@ impl PeerDB {
 }
 
 impl PeerDatabase for PeerDB {
-  fn update_peer(&mut self, peer: Peer, hashes: Vec<Hash>) -> bool {
+  type Error = ();
+
+  fn update_peer(&mut self, peer: Peer, hashes: Vec<Hash>) -> Result<bool, Self::Error> {
     if !self.peer_to_hash.contains_key(&&peer.address) {
       self
         .peer_to_hash
         .insert(peer.address.clone(), HashSet::new());
     }
+
     for hash in hashes.iter() {
       self.insert_hash(hash);
       self.link(hash, &&peer.address);
     }
-    match self.peers.insert(peer.address.clone(), peer) {
-      None => false,
-      Some(_) => true,
-    }
+
+    Ok(self.peers.insert(peer.address.clone(), peer).is_some())
   }
 
-  fn remove_peer(&mut self, peer_address: &Address) -> Option<Peer> {
+  fn remove_peer(&mut self, peer_address: &Address) -> Result<Option<Peer>, Self::Error> {
     let hashes = self
       .peer_to_hash
       .remove(peer_address)
@@ -79,50 +82,54 @@ impl PeerDatabase for PeerDB {
         .remove(peer_address);
     }
 
-    self.peers.remove(peer_address)
+    Ok(self.peers.remove(peer_address))
   }
 
-  fn get_peer(&self, peer_address: &Address) -> Option<Peer> {
-    self.peers.get(peer_address).map(|peer| peer.clone())
+  fn get_peer(&self, peer_address: &Address) -> Result<Option<Peer>, Self::Error> {
+    Ok(self.peers.get(peer_address).map(|peer| peer.clone()))
   }
 
-  fn get_peers(&self) -> Vec<Peer> {
-    self.peers.values().map(|peer| peer.clone()).collect()
+  fn get_peers(&self) -> Result<Vec<Peer>, Self::Error> {
+    Ok(self.peers.values().map(|peer| peer.clone()).collect())
   }
 
-  fn get_peers_for_hash(&self, hash: &Hash) -> Vec<Peer> {
+  fn get_peers_for_hash(&self, hash: &Hash) -> Result<Vec<Peer>, Self::Error> {
     let peers = self.hash_to_peer.get(hash);
     let peers = match peers {
       Some(peers) => peers.iter().collect(),
       None => vec![],
     };
 
-    peers
+    let peers = peers
       .iter()
       .map(|peer_id| {
         let peer = self.peers.get(*peer_id).unwrap();
         peer.clone()
       })
-      .collect()
+      .collect();
+
+    Ok(peers)
   }
 
-  fn get_hashes(&self) -> Vec<(Hash, usize)> {
-    self
+  fn get_hashes(&self) -> Result<Vec<(Hash, usize)>, Self::Error> {
+    let hashes = self
       .hash_to_peer
       .iter()
       .map(|(hash, set)| (hash.clone(), set.len()))
-      .collect()
+      .collect();
+
+    Ok(hashes)
   }
 
-  fn get_peer_count(&self) -> usize {
-    self.peers.len()
+  fn get_peer_count(&self) -> Result<usize, Self::Error> {
+    Ok(self.peers.len())
   }
 
-  fn get_hash_count(&self) -> usize {
-    self.hashes.len()
+  fn get_hash_count(&self) -> Result<usize, Self::Error> {
+    Ok(self.hashes.len())
   }
 
-  fn cleanup_peers(&mut self, timestamp: SystemTime) -> usize {
+  fn cleanup_peers(&mut self, timestamp: SystemTime) -> Result<usize, Self::Error> {
     let dead_peers: Vec<_> = self
       .peers
       .values()
@@ -131,24 +138,25 @@ impl PeerDatabase for PeerDB {
       .collect();
     let count = dead_peers.len();
     dead_peers.iter().for_each(|peer| {
-      self.remove_peer(&peer);
+      self.remove_peer(&peer).unwrap();
     });
 
-    count
+    Ok(count)
   }
 
-  fn cleanup_hashes(&mut self) -> usize {
+  fn cleanup_hashes(&mut self) -> Result<usize, Self::Error> {
     let dead_hashes: Vec<_> = self
       .hashes
       .values()
       .filter(|hash| self.hash_to_peer.get(&hash.hash).map_or(0, |h| h.len()) == 0)
       .map(|hash| hash.hash.clone())
       .collect();
+
     let count = dead_hashes.len();
     for hash in dead_hashes.iter() {
       self.hashes.remove(hash);
     }
 
-    count
+    Ok(count)
   }
 }

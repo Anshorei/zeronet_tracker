@@ -15,7 +15,7 @@ license = "WTFPL"
 [features]
 metrics = [ "server", "prometheus", "lazy_static" ]
 server = ["maud", "rocket", "rocket_contrib" ]
-sql = [ "sqlite" ]
+sql = [ "sqlite", "thiserror" ]
 tor = ["zeronet_protocol/tor"]
 i2p = ["zeronet_protocol/i2p"]
 
@@ -36,3 +36,4 @@ maud = { version = "~0.23", features = [ "rocket" ], optional = true }
 sqlite = { version = "~0.26", optional = true }
 rocket = { version = "~0.4", optional = true }
 rocket_contrib = { version = "~0.4", optional = true }
+thiserror = { version = "*", optional = true }

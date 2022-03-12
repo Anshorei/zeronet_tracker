@@ -130,12 +130,20 @@ impl Handler {
     let mut body = templates::AnnounceResponse::default();
     {
       let mut shared_state = self.shared_state.lock().unwrap();
+
       let address = self.address.with_port(announce.port as u16);
       if announce.delete {
         trace!("Deleting peer {}", &address);
-        shared_state.peer_db.remove_peer(&address);
+        shared_state
+          .peer_db
+          .remove_peer(&address)
+          .expect("Could not remove peer");
       }
-      let peer = shared_state.peer_db.get_peer(&address);
+
+      let peer = shared_state
+        .peer_db
+        .get_peer(&address)
+        .expect("Could not get peer");
       let date_added = match peer {
         Some(peer) => peer.date_added,
         None => SystemTime::now(),
@@ -153,7 +161,10 @@ impl Handler {
         .collect();
       if announce.onions.is_empty() {
         let peer_address = peer.address.to_string();
-        let peer_already_known = shared_state.peer_db.update_peer(peer, hashes.clone());
+        let peer_already_known = shared_state
+          .peer_db
+          .update_peer(peer, hashes.clone())
+          .expect("Could not update peer");
         match peer_already_known {
           true => info!("Updated peer {} for {} hashes", peer_address, hashes.len()),
           false => info!("Added peer {} for {} hashes", peer_address, hashes.len()),
@@ -171,19 +182,24 @@ impl Handler {
                   last_seen: SystemTime::now(),
                   date_added,
                 };
-                shared_state.peer_db.update_peer(peer, vec![hash.clone()]);
+                shared_state
+                  .peer_db
+                  .update_peer(peer, vec![hash.clone()])
+                  .expect("Could not update peer");
               }
               Err(_) => {}
             };
           });
         info!("Added onions for {} hashes", announce.onions.len());
       }
+
       let mut hash_peers = Vec::new();
       hashes.into_iter().for_each(|hash| {
         let mut peers = templates::AnnouncePeers::default();
         shared_state
           .peer_db
           .get_peers_for_hash(&hash)
+          .expect("Could not get peers for hash")
           .into_iter()
           .for_each(|peer| {
             let bytes = ByteBuf::from(peer.address.pack());
@@ -203,7 +219,10 @@ impl Handler {
                 peers.onion_v2.push(bytes);
               }
               #[cfg(feature = "i2p")]
-              _ => {}
+              _ => {
+                // TODO: implement i2p
+                unimplemented!()
+              }
             }
           });
         hash_peers.push(peers);

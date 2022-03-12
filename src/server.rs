@@ -49,10 +49,10 @@ fn overview(state: State<StateWrapper>) -> Markup {
     p { "PeerDB: " (get_peer_db_type()) }
     p { "Uptime: " (format!("{:.2}", uptime)) "h" }
     p {
-      a href="/peers" { "Peers: " (shared_state.peer_db.get_peer_count()) }
+      a href="/peers" { "Peers: " (shared_state.peer_db.get_peer_count().unwrap_or(0)) }
     }
     p {
-      a href="/hashes" { "Hashes: " (shared_state.peer_db.get_hash_count()) }
+      a href="/hashes" { "Hashes: " (shared_state.peer_db.get_hash_count().unwrap_or(0)) }
     }
     (stat_links())
   }
@@ -84,12 +84,17 @@ li {
 #[get("/peers")]
 fn peers(state: State<StateWrapper>) -> Markup {
   let shared_state = state.shared_state.lock().unwrap();
+  let peers = shared_state
+    .peer_db
+    .get_peers()
+    .expect("Could not get peers");
+
   html! {
     (PreEscaped(STYLE))
     a href="/" { ("Back") }
     h1 { "ZeroNet Tracker - Peer List" }
     ol {
-      @for peer in shared_state.peer_db.get_peers().iter() {
+      @for peer in peers.iter() {
         li { (format!("{}", peer.address)) }
       }
     }
@@ -99,7 +104,10 @@ fn peers(state: State<StateWrapper>) -> Markup {
 #[get("/hashes")]
 fn hashes(state: State<StateWrapper>) -> Markup {
   let shared_state = state.shared_state.lock().unwrap();
-  let hashes = shared_state.peer_db.get_hashes();
+  let hashes = shared_state
+    .peer_db
+    .get_hashes()
+    .expect("Could not get hashes");
   let hashes = hashes
     .iter()
     .map(|(hash, peers)| (base64::encode(&hash.0), peers));
@@ -133,8 +141,8 @@ fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
   Json(Stats {
     opened_connections: metrics::OPENED_CONNECTIONS.get() as usize,
     closed_connections: metrics::CLOSED_CONNECTIONS.get() as usize,
-    peer_count:         shared_state.peer_db.get_peer_count(),
-    hash_count:         shared_state.peer_db.get_hash_count(),
+    peer_count:         shared_state.peer_db.get_peer_count().unwrap_or(0),
+    hash_count:         shared_state.peer_db.get_hash_count().unwrap_or(0),
     uptime:             shared_state.start_time.elapsed().unwrap().as_secs(),
     version:            format!("v{}", crate_version!()),
   })
@@ -145,8 +153,8 @@ fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
 fn stats_prometheus(state: State<StateWrapper>) -> content::Plain<Vec<u8>> {
   let shared_state = state.shared_state.lock().unwrap();
 
-  metrics::PEER_GAUGE.set(shared_state.peer_db.get_peer_count() as i64);
-  metrics::HASH_GAUGE.set(shared_state.peer_db.get_hash_count() as i64);
+  metrics::PEER_GAUGE.set(shared_state.peer_db.get_peer_count().unwrap_or(0) as i64);
+  metrics::HASH_GAUGE.set(shared_state.peer_db.get_hash_count().unwrap_or(0) as i64);
 
   let encoder = TextEncoder::new();
   let mut buffer = vec![];
@@ -165,7 +173,10 @@ struct HashStat {
 #[get("/hash_stats")]
 fn hash_stats(state: State<StateWrapper>) -> Json<Vec<HashStat>> {
   let shared_state = state.shared_state.lock().unwrap();
-  let hashes = shared_state.peer_db.get_hashes();
+  let hashes = shared_state
+    .peer_db
+    .get_hashes()
+    .expect("Could not get hashes");
   let hashes: Vec<HashStat> = hashes
     .iter()
     .map(|(hash, peers)| HashStat {

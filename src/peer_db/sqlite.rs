@@ -1,6 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use sqlite::{Connection, Value};
+use thiserror::Error;
 use zeronet_protocol::PeerAddr;
 
 use super::{Hash, Peer, PeerDatabase};
@@ -15,12 +16,19 @@ fn timestamp_to_unix(timestamp: SystemTime) -> i64 {
   timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64
 }
 
+#[derive(Error, Debug)]
+pub enum Error {
+  #[error("error with sqlite")]
+  SQLite(#[from] sqlite::Error),
+}
+
 pub struct PeerDB {
   conn: Connection,
 }
 
 impl PeerDB {
-  pub fn new() -> Result<PeerDB, ()> {
+  pub fn new() -> Result<PeerDB, Error> {
+    // TODO: option to load database from a path
     let connection = sqlite::open(":memory:").unwrap();
     connection
       .execute(
@@ -47,7 +55,7 @@ impl PeerDB {
     return Ok(db);
   }
 
-  pub fn upsert_peer(&mut self, peer: &Peer) -> bool {
+  pub fn upsert_peer(&mut self, peer: &Peer) -> Result<bool, Error> {
     let mut statement = self
       .conn
       .prepare(
@@ -72,11 +80,11 @@ impl PeerDB {
       .unwrap();
     statement.next().unwrap();
     let date_added = statement.read::<i64>(0).unwrap();
-    println!("{}, {}", date_updated, date_added);
-    return date_updated != date_added;
+
+    return Ok(date_updated != date_added);
   }
 
-  pub fn insert_hash(&mut self, hash: &Hash) {
+  pub fn insert_hash(&mut self, hash: &Hash) -> Result<(), Error> {
     let mut statement = self
       .conn
       .prepare(
@@ -91,9 +99,11 @@ impl PeerDB {
       .unwrap();
     statement.bind_by_name(":hash", hash.0.as_slice()).unwrap();
     statement.next().unwrap();
+
+    Ok(())
   }
 
-  pub fn link(&mut self, hash: &Hash, peer_address: &PeerAddr) {
+  pub fn link(&mut self, hash: &Hash, peer_address: &PeerAddr) -> Result<(), Error> {
     let mut statement = self
       .conn
       .prepare(
@@ -113,20 +123,25 @@ impl PeerDB {
       .unwrap();
     statement.bind(2, hash.0.as_slice()).unwrap();
     statement.next().unwrap();
+
+    Ok(())
   }
 }
 
 impl PeerDatabase for PeerDB {
-  fn update_peer(&mut self, peer: Peer, hashes: Vec<Hash>) -> bool {
-    let was_known_peer = self.upsert_peer(&peer);
+  type Error = Error;
+
+  fn update_peer(&mut self, peer: Peer, hashes: Vec<Hash>) -> Result<bool, Self::Error> {
+    let was_known_peer = self.upsert_peer(&peer)?;
     for hash in hashes.iter() {
-      self.insert_hash(&hash);
-      self.link(&hash, &peer.address);
+      self.insert_hash(&hash)?;
+      self.link(&hash, &peer.address)?;
     }
-    return was_known_peer;
+
+    Ok(was_known_peer)
   }
 
-  fn remove_peer(&mut self, peer_address: &PeerAddr) -> Option<Peer> {
+  fn remove_peer(&mut self, peer_address: &PeerAddr) -> Result<Option<Peer>, Self::Error> {
     let mut statement = self
       .conn
       .prepare(
@@ -156,17 +171,18 @@ impl PeerDatabase for PeerDB {
       .bind(&[Value::String(peer_address.to_string())])
       .unwrap();
     if let Some(row) = cursor.next().unwrap() {
-      return Some(Peer {
+      let peer = Peer {
         address:    PeerAddr::parse(row[0].as_string().unwrap()).unwrap(),
         date_added: unix_to_timestamp(row[1].as_integer().unwrap()),
         last_seen:  unix_to_timestamp(row[2].as_integer().unwrap()),
-      });
+      };
+      return Ok(Some(peer));
     } else {
-      return None;
+      return Ok(None);
     }
   }
 
-  fn get_peer(&self, peer_address: &PeerAddr) -> Option<Peer> {
+  fn get_peer(&self, peer_address: &PeerAddr) -> Result<Option<Peer>, Self::Error> {
     let mut cursor = self
       .conn
       .prepare(
@@ -182,17 +198,18 @@ impl PeerDatabase for PeerDB {
       .bind(&[Value::String(peer_address.to_string())])
       .unwrap();
     if let Some(row) = cursor.next().unwrap() {
-      return Some(Peer {
+      let peer = Peer {
         address:    PeerAddr::parse(row[0].as_string().unwrap()).unwrap(),
         date_added: unix_to_timestamp(row[1].as_integer().unwrap()),
         last_seen:  unix_to_timestamp(row[2].as_integer().unwrap()),
-      });
+      };
+      return Ok(Some(peer));
     } else {
-      return None;
+      return Ok(None);
     }
   }
 
-  fn get_peers(&self) -> Vec<Peer> {
+  fn get_peers(&self) -> Result<Vec<Peer>, Self::Error> {
     let mut cursor = self
       .conn
       .prepare(
@@ -211,10 +228,10 @@ impl PeerDatabase for PeerDB {
         last_seen:  unix_to_timestamp(row[2].as_integer().unwrap()),
       })
     }
-    return peers;
+    return Ok(peers);
   }
 
-  fn get_peers_for_hash(&self, hash: &Hash) -> Vec<Peer> {
+  fn get_peers_for_hash(&self, hash: &Hash) -> Result<Vec<Peer>, Self::Error> {
     let mut cursor = self
       .conn
       .prepare(
@@ -237,10 +254,10 @@ impl PeerDatabase for PeerDB {
         last_seen:  unix_to_timestamp(row[2].as_integer().unwrap()),
       })
     }
-    return peers;
+    return Ok(peers);
   }
 
-  fn get_hashes(&self) -> Vec<(Hash, usize)> {
+  fn get_hashes(&self) -> Result<Vec<(Hash, usize)>, Self::Error> {
     let mut cursor = self
       .conn
       .prepare(
@@ -260,36 +277,37 @@ impl PeerDatabase for PeerDB {
         row[1].as_integer().unwrap() as usize,
       ))
     }
-    return hashes;
+
+    return Ok(hashes);
   }
 
-  fn get_peer_count(&self) -> usize {
+  fn get_peer_count(&self) -> Result<usize, Self::Error> {
     let mut cursor = self
       .conn
       .prepare("SELECT COUNT(pk) FROM peers;")
       .unwrap()
       .into_cursor();
     if let Some(row) = cursor.next().unwrap() {
-      return row[0].as_integer().unwrap() as usize;
+      return Ok(row[0].as_integer().unwrap() as usize);
     } else {
-      return 0;
+      return Ok(0);
     }
   }
 
-  fn get_hash_count(&self) -> usize {
+  fn get_hash_count(&self) -> Result<usize, Self::Error> {
     let mut cursor = self
       .conn
       .prepare("SELECT COUNT(pk) FROM hashes;")
       .unwrap()
       .into_cursor();
     if let Some(row) = cursor.next().unwrap() {
-      return row[0].as_integer().unwrap() as usize;
+      return Ok(row[0].as_integer().unwrap() as usize);
     } else {
-      return 0;
+      return Ok(0);
     }
   }
 
-  fn cleanup_peers(&mut self, timestamp: SystemTime) -> usize {
+  fn cleanup_peers(&mut self, timestamp: SystemTime) -> Result<usize, Self::Error> {
     let mut statement = self
       .conn
       .prepare(
@@ -304,10 +322,10 @@ impl PeerDatabase for PeerDB {
       .unwrap();
     statement.next().unwrap();
 
-    self.conn.change_count()
+    Ok(self.conn.change_count())
   }
 
-  fn cleanup_hashes(&mut self) -> usize {
+  fn cleanup_hashes(&mut self) -> Result<usize, Self::Error> {
     self
       .conn
       .execute(
@@ -323,6 +341,6 @@ impl PeerDatabase for PeerDB {
       )
       .unwrap();
 
-    self.conn.change_count()
+    Ok(self.conn.change_count())
   }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.15"
+version = "0.1.16"
 authors = ["Ansho Rei <anshorei@protonmail.com>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."
@@ -36,4 +36,8 @@ maud = { version = "~0.23", features = [ "rocket" ], optional = true }
 sqlite = { version = "~0.26", optional = true }
 rocket = { version = "~0.4", optional = true }
 rocket_contrib = { version = "~0.4", optional = true }
-thiserror = { version = "*", optional = true }
+thiserror = { version = "~1.0", optional = true }
+rustc_version = "~0.4"
+
+[build-dependencies]
+rustc_version = "~0.4"

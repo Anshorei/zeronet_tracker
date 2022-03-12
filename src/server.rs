@@ -33,7 +33,7 @@ pub fn run(shared_state: Arc<Mutex<SharedState>>, port: u16) {
 
   rocket::custom(config)
     .mount("/", routes![overview, peers, hashes, hash_stats])
-    .mount("/stats/", stats_routes)
+    .mount("/", stats_routes)
     .manage(state)
     .launch();
 }
@@ -67,10 +67,13 @@ fn stat_links() -> Markup {
 fn stat_links() -> Markup {
   html! {
     p {
-      a href="/stats/json" { "Data in JSON format" }
+      a href="/stats/json" { "Stats in JSON format" }
     }
     p {
-      a href="/stats/prometheus" { "Prometheus scrape URL" }
+      a href="/stats/hashes" { "Hash stats in JSON format" }
+    }
+    p {
+      a href="/metrics" { "Prometheus scrape URL" }
     }
   }
 }
@@ -134,7 +137,7 @@ struct Stats {
 }
 
 #[cfg(feature = "metrics")]
-#[get("/json")]
+#[get("/stats/json")]
 fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
   let shared_state = state.shared_state.lock().unwrap();
 
@@ -149,12 +152,13 @@ fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
 }
 
 #[cfg(feature = "metrics")]
-#[get("/prometheus")]
+#[get("/metrics")]
 fn stats_prometheus(state: State<StateWrapper>) -> content::Plain<Vec<u8>> {
   let shared_state = state.shared_state.lock().unwrap();
 
   metrics::PEER_GAUGE.set(shared_state.peer_db.get_peer_count().unwrap_or(0) as i64);
   metrics::HASH_GAUGE.set(shared_state.peer_db.get_hash_count().unwrap_or(0) as i64);
+  metrics::VERSION_GAUGE.set(1);
 
   let encoder = TextEncoder::new();
   let mut buffer = vec![];
@@ -170,7 +174,7 @@ struct HashStat {
   count: usize,
 }
 
-#[get("/hash_stats")]
+#[get("/stats/hashes")]
 fn hash_stats(state: State<StateWrapper>) -> Json<Vec<HashStat>> {
   let shared_state = state.shared_state.lock().unwrap();
   let hashes = shared_state

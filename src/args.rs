@@ -1,12 +1,18 @@
-use clap::{app_from_crate, Arg};
+use std::path::PathBuf;
+
+use clap::{command, Arg};
 
 pub struct Args {
+  pub port:     u16,
+  pub address:  String,
+  pub interval: u16,
+  pub timeout:  u16,
+
   #[cfg(feature = "server")]
   pub rocket_port: u16,
-  pub port:        u16,
-  pub address:     String,
-  pub interval:    u16,
-  pub timeout:     u16,
+
+  #[cfg(feature = "sql")]
+  pub database_file: Option<PathBuf>,
 }
 
 fn is_u16(v: &str) -> Result<(), String> {
@@ -19,7 +25,7 @@ fn is_u16(v: &str) -> Result<(), String> {
 }
 
 pub fn get_arguments() -> Args {
-  let mut app = app_from_crate!();
+  let mut app = command!();
   app = app
     .arg(
       Arg::new("address")
@@ -71,18 +77,40 @@ pub fn get_arguments() -> Args {
     );
   }
 
+  #[cfg(feature = "sql")]
+  {
+    app = app.arg(
+      Arg::new("database_file")
+        .long("database_file")
+        .short('d')
+        .help("Path to the SQLite database file.")
+        .env("DATABASE_FILE")
+        .takes_value(true),
+    );
+  }
+
   let matches = app.get_matches();
   let args = Args {
-    #[cfg(feature = "server")]
-    rocket_port: matches.value_of("rocket_port").unwrap().parse().unwrap(),
-    port: matches.value_of("listener_port").unwrap().parse().unwrap(),
-    address: matches.value_of("address").unwrap().to_string(),
+    port:     matches.value_of("listener_port").unwrap().parse().unwrap(),
+    address:  matches.value_of("address").unwrap().to_string(),
     interval: matches
       .value_of("janitor_interval")
       .unwrap()
       .parse()
       .unwrap(),
-    timeout: matches.value_of("timeout").unwrap().parse().unwrap(),
+    timeout:  matches.value_of("timeout").unwrap().parse().unwrap(),
+
+    #[cfg(feature = "server")]
+    rocket_port:                            matches
+      .value_of("rocket_port")
+      .unwrap()
+      .parse()
+      .unwrap(),
+
+    #[cfg(feature = "sql")]
+    database_file:                         matches
+      .value_of("database_file")
+      .map(|p| p.parse().unwrap()),
   };
 
   args

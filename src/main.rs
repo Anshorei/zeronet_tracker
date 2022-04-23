@@ -58,7 +58,7 @@ fn main() {
   info!("Launched {} v{}", crate_name!(), crate_version!());
   info!("PeerDB type: {}", crate::peer_db::get_peer_db_type());
 
-  let shared_state = SharedState::new();
+  let shared_state = SharedState::new(&args);
   let shared_state = Arc::new(Mutex::new(shared_state));
 
   #[cfg(feature = "server")]

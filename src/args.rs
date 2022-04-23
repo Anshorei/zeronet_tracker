@@ -1,3 +1,4 @@
+#[cfg(feature = "sql")]
 use std::path::PathBuf;
 
 use clap::{command, Arg};

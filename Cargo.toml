@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.16"
+version = "0.1.17"
 authors = ["Ansho Rei <anshorei@protonmail.com>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."
@@ -16,7 +16,7 @@ license = "WTFPL"
 metrics = [ "server", "prometheus", "lazy_static" ]
 server = ["maud", "rocket", "rocket_contrib" ]
 # sql = [ "sqlite", "thiserror" ]
-sql = [ "rusqlite", "rusqlite_migration", "thiserror" ]
+sql = [ "rusqlite", "rusqlite_migration", "lazy_static", "thiserror" ]
 tor = ["zeronet_protocol/tor"]
 i2p = ["zeronet_protocol/i2p"]
 

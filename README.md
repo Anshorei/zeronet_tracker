@@ -30,6 +30,9 @@ Features:
     - [ ] Option to crawl ZeroSites for hashes
   - [x] Explore peers
   - [ ] Show log (this should not be publicly accessible)
+- [x] SQLite
+  - [x] In memory
+  - [x] On file
 - [x] Metrics
   - [x] Endpoint for Prometheus scraper
 
@@ -41,4 +44,10 @@ This ZeroNet Tracker depends on the ZeroNet Protocol library which is available 
 ### Server
 The ZeroNet Tracker can optionally be compiled with the `server` flag. If enabled a server using Rocket and Maud will make useful information about the status of the tracker available on `localhost:8000`, or at the `ROCKET_PORT` environment variable.
 
-It should be perfectly safe to make this available outside your network. Be aware that with low numbers of peers this information combined with a ZeroSites crawler could be used to deanonymize peers.
+It should be perfectly safe to make this available outside of your network as long as the dependencies used in this project are sound. Be aware that with low numbers of peers this information combined with a ZeroSites crawler could be used to deanonymize peers.
+
+# SQL
+Without this feature the tracker will keep all of its data in memory and it is lost upon restart. Since the retention is under one hour and the tracker is highly unlikely to crash there is little benefit to changing this behaviour. Should you want retention between restarts of the tracker then you can enable the `sql` feature and set a `database_file` path in the configuration. The tracker then uses a peerdb implementation based on `rusqlite` that writes to the given path.
+
+# Metrics
+If you want to collect metrics from the ZeroNet Tracker in Prometheus you can enable the `metrics` feature which extends the `server` feature with a page at `/metrics` that serves some statistics about the program ready for Prometheus to ingest.

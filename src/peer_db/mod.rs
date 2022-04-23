@@ -24,7 +24,7 @@ pub struct Peer {
   pub last_seen:  SystemTime,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub struct Hash(pub Vec<u8>);
 
 pub trait PeerDatabase {

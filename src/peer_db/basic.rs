@@ -4,6 +4,7 @@ use std::time::SystemTime;
 use zeronet_protocol::PeerAddr as Address;
 
 use super::{Hash, Peer, PeerDatabase};
+use crate::args::Args;
 
 pub type Error = ();
 
@@ -21,7 +22,7 @@ pub struct PeerDB {
 }
 
 impl PeerDB {
-  pub fn new() -> Result<PeerDB, ()> {
+  pub fn new(_args: &Args) -> Result<PeerDB, ()> {
     let db = PeerDB {
       peers:        HashMap::new(),
       hashes:       HashMap::new(),

@@ -9,19 +9,21 @@ fn main() {
     .unwrap()
     .success();
 
-  let mut revision = String::new();
+  let commit_hash = String::from_utf8_lossy(
+    &Command::new("git")
+      .args(&["rev-parse", "--short", "HEAD"])
+      .output()
+      .unwrap()
+      .stdout,
+  )
+  .trim()
+  .to_string();
 
-  if is_clean {
-    revision = String::from_utf8_lossy(
-      &Command::new("git")
-        .args(&["rev-parse", "--short", "HEAD"])
-        .output()
-        .unwrap()
-        .stdout,
-    )
-    .trim()
-    .to_string();
-  }
+  let revision = match is_clean {
+    true => commit_hash,
+    false => format!("~{}", commit_hash),
+  };
+
   println!("cargo:rustc-env=CARGO_PKG_REVISION={}", &revision);
 
   println!("cargo:rustc-env=CARGO_PKG_RUSTC={}", version().unwrap());

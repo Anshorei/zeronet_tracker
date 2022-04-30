@@ -1,3 +1,4 @@
+#![feature(test)]
 #![cfg_attr(feature = "server", feature(proc_macro_hygiene, decl_macro))]
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
@@ -5,9 +6,10 @@ use std::sync::{Arc, Mutex};
 use clap::{crate_name, crate_version};
 use log::*;
 
+use zeronet_peerdb::get_peer_db_type;
+
 mod args;
 mod janitor;
-mod peer_db;
 mod peer_handler;
 mod shared_state;
 
@@ -55,8 +57,13 @@ fn start_listener(shared_state: &Arc<Mutex<SharedState>>, address: String, port:
 fn main() {
   let args = args::get_arguments();
   pretty_env_logger::init_timed();
-  info!("Launched {} v{}", crate_name!(), crate_version!());
-  info!("PeerDB type: {}", crate::peer_db::get_peer_db_type());
+  info!(
+    "Launched {} v{} {}",
+    crate_name!(),
+    crate_version!(),
+    env!("CARGO_PKG_REVISION"),
+  );
+  info!("PeerDB type: {}", get_peer_db_type());
 
   let shared_state = SharedState::new(&args);
   let shared_state = Arc::new(Mutex::new(shared_state));

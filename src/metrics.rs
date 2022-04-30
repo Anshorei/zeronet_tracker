@@ -1,8 +1,11 @@
+use std::sync::{Arc, Mutex};
+
 use clap::crate_version;
 use lazy_static::lazy_static;
 use prometheus::{labels, opts, register_int_counter, register_int_gauge, IntCounter, IntGauge};
+use zeronet_peerdb::get_peer_db_type;
 
-use crate::peer_db::get_peer_db_type;
+use crate::shared_state::SharedState;
 
 lazy_static! {
   pub static ref PEER_GAUGE: IntGauge =
@@ -32,4 +35,12 @@ lazy_static! {
     }
   ))
   .unwrap();
+}
+
+pub fn update_metrics(shared_state: &Arc<Mutex<SharedState>>) {
+  let shared_state = shared_state.lock().unwrap();
+
+  PEER_GAUGE.set(shared_state.peer_db.get_peer_count().unwrap_or(0) as i64);
+  HASH_GAUGE.set(shared_state.peer_db.get_hash_count().unwrap_or(0) as i64);
+  VERSION_GAUGE.set(1);
 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
@@ -10,10 +11,10 @@ use zeronet_protocol::{
   message::{templates, Request},
   PeerAddr as Address, ZeroConnection,
 };
+use zeronet_peerdb::{Hash, Peer};
 
 #[cfg(feature = "metrics")]
 use crate::metrics;
-use crate::peer_db::{Hash, Peer};
 use crate::shared_state::SharedState;
 
 pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
@@ -78,12 +79,21 @@ impl Handler {
         break;
       }
       let req = req.unwrap();
-      info!("Received request: {:?}", req.cmd);
-      match req.cmd.as_str() {
+      let cmd = req.cmd.clone();
+
+      info!("Received {} from {}", cmd, self.address.to_string());
+      let t = SystemTime::now();
+      match cmd.as_str() {
         "handshake" => self.handle_handshake(req),
         "announce" => self.handle_announce(req),
         _ => self.handle_unsupported(req.req_id),
       };
+      info!(
+        "Handled {} from {} in {:?}",
+        cmd,
+        self.address.to_string(),
+        SystemTime::now().duration_since(t).unwrap()
+      );
     }
   }
 
@@ -96,9 +106,9 @@ impl Handler {
         return self.handle_invalid(req.req_id, err);
       }
     };
+
     if let Some(onion) = handshake.onion {
-      let port = self.address.get_port();
-      match Address::parse(format!("{}.onion:{}", onion, port)) {
+      match Address::parse(format!("{}.onion:{}", onion, handshake.fileserver_port)) {
         Ok(address) => self.address = address,
         Err(err) => {
           error!("Could not parse address: {:?}", err);
@@ -149,7 +159,7 @@ impl Handler {
         None => SystemTime::now(),
       };
       let peer = Peer {
-        address: address,
+        address,
         last_seen: SystemTime::now(),
         date_added,
       };
@@ -159,37 +169,57 @@ impl Handler {
         .iter()
         .map(|buf| Hash(buf.clone().into_vec()))
         .collect();
+
       if announce.onions.is_empty() {
         let peer_address = peer.address.to_string();
-        let peer_already_known = shared_state
-          .peer_db
-          .update_peer(peer, hashes.clone())
-          .expect("Could not update peer");
-        match peer_already_known {
-          true => info!("Updated peer {} for {} hashes", peer_address, hashes.len()),
-          false => info!("Added peer {} for {} hashes", peer_address, hashes.len()),
+
+        if !peer_address.starts_with("127.0.0.1") && !peer_address.starts_with("192.") {
+          trace!("Updating peer {}", peer_address);
+          let peer_already_known = shared_state
+            .peer_db
+            .update_peer(&peer, &hashes)
+            .expect("Could not update peer");
+          match peer_already_known {
+            true => info!("Updated peer {} for {} hashes", peer_address, hashes.len()),
+            false => info!("Added peer {} for {} hashes", peer_address, hashes.len()),
+          }
         }
       } else {
+        let mut onion_hashes = HashMap::<String, Vec<Hash>>::new();
         announce
           .onions
           .iter()
           .zip(hashes.iter())
           .for_each(|(onion, hash)| {
-            match Address::parse(format!("{}.onion:{}", onion, announce.port)) {
-              Ok(onion) => {
-                let peer = Peer {
-                  address: onion,
-                  last_seen: SystemTime::now(),
-                  date_added,
-                };
-                shared_state
-                  .peer_db
-                  .update_peer(peer, vec![hash.clone()])
-                  .expect("Could not update peer");
-              }
-              Err(_) => {}
-            };
+            if let Some(hashes) = onion_hashes.get_mut(onion) {
+              hashes.push(hash.clone());
+            } else {
+              onion_hashes.insert(onion.to_string(), vec![hash.clone()]);
+            }
           });
+        onion_hashes.into_iter().for_each(|(onion, hashes)| {
+          match Address::parse(format!("{}.onion:{}", onion, announce.port)) {
+            Ok(onion) => {
+              let peer = Peer {
+                address: onion,
+                last_seen: SystemTime::now(),
+                date_added,
+              };
+              let num_of_hashes = hashes.len();
+              let t = SystemTime::now();
+              shared_state
+                .peer_db
+                .update_peer(&peer, &hashes)
+                .expect("Could not update peer");
+              trace!(
+                "Updated onion with {} hashes in {:?}",
+                num_of_hashes,
+                SystemTime::now().duration_since(t).unwrap(),
+              );
+            }
+            Err(_) => {}
+          };
+        });
         info!("Added onions for {} hashes", announce.onions.len());
       }
 

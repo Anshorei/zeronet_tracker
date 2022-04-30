@@ -1770,6 +1770,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
 
 [[package]]
+name = "zeronet_peerdb"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06d638ed2566cfa857cb33cbe558da8d80f3fa8badc7ae55492ad89a4f1bef57"
+dependencies = [
+ "lazy_static",
+ "rusqlite",
+ "rusqlite_migration",
+ "thiserror",
+ "zeronet_protocol",
+]
+
+[[package]]
 name = "zeronet_protocol"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1804,14 +1817,13 @@ dependencies = [
  "maud",
  "pretty_env_logger",
  "prometheus",
+ "rand 0.8.5",
  "rocket",
  "rocket_contrib",
- "rusqlite",
- "rusqlite_migration",
  "rustc_version",
  "serde",
  "serde_bytes",
  "serde_json",
- "thiserror",
+ "zeronet_peerdb",
  "zeronet_protocol",
 ]

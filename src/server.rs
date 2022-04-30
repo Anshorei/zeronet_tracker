@@ -10,10 +10,10 @@ use rocket::response::content;
 use rocket::{get, routes, Config, State};
 use rocket_contrib::json::Json;
 use serde::Serialize;
+use zeronet_peerdb::get_peer_db_type;
 
 #[cfg(feature = "metrics")]
 use crate::metrics;
-use crate::peer_db::get_peer_db_type;
 use crate::shared_state::SharedState;
 
 struct StateWrapper {
@@ -154,11 +154,7 @@ fn stats_json(state: State<StateWrapper>) -> Json<Stats> {
 #[cfg(feature = "metrics")]
 #[get("/metrics")]
 fn stats_prometheus(state: State<StateWrapper>) -> content::Plain<Vec<u8>> {
-  let shared_state = state.shared_state.lock().unwrap();
-
-  metrics::PEER_GAUGE.set(shared_state.peer_db.get_peer_count().unwrap_or(0) as i64);
-  metrics::HASH_GAUGE.set(shared_state.peer_db.get_hash_count().unwrap_or(0) as i64);
-  metrics::VERSION_GAUGE.set(1);
+  metrics::update_metrics(&state.shared_state);
 
   let encoder = TextEncoder::new();
   let mut buffer = vec![];

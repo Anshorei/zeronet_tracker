@@ -1,6 +1,6 @@
 [package]
 name = "zeronet_tracker"
-version = "0.1.17"
+version = "0.1.18"
 authors = ["Ansho Rei <anshorei@protonmail.com>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."
@@ -15,13 +15,13 @@ license = "WTFPL"
 [features]
 metrics = [ "server", "prometheus", "lazy_static" ]
 server = ["maud", "rocket", "rocket_contrib" ]
-# sql = [ "sqlite", "thiserror" ]
-sql = [ "rusqlite", "rusqlite_migration", "lazy_static", "thiserror" ]
+sql = [ "zeronet_peerdb/sql" ]
 tor = ["zeronet_protocol/tor"]
 i2p = ["zeronet_protocol/i2p"]
 
 [dependencies]
 zeronet_protocol = "~0.1.9"
+zeronet_peerdb = "~0.1.1"
 futures = "~0.3"
 log = "~0.4"
 pretty_env_logger = "~0.4"
@@ -34,12 +34,12 @@ clap = { version = "~3.1", features = [ "cargo", "env" ] }
 prometheus = { version = "~0.13", features = [ "process" ], optional = true }
 lazy_static = { version = "~1.4", optional = true }
 maud = { version = "~0.23", features = [ "rocket" ], optional = true }
-rusqlite = { version = "~0.27", optional = true }
-rusqlite_migration = { version = "~1.0", optional = true }
 rocket = { version = "~0.4", optional = true }
 rocket_contrib = { version = "~0.4", optional = true }
-thiserror = { version = "~1.0", optional = true }
 rustc_version = "~0.4"
+
+[dev-dependencies]
+rand = "0.8"
 
 [build-dependencies]
 rustc_version = "~0.4"

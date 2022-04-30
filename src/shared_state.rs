@@ -1,11 +1,8 @@
 use std::time::SystemTime;
 
+use zeronet_peerdb::{Error, PeerDatabase, PeerDB};
+
 use crate::args::Args;
-#[cfg(not(feature = "sql"))]
-use crate::peer_db::basic::{Error, PeerDB};
-#[cfg(feature = "sql")]
-use crate::peer_db::sqlite::{Error, PeerDB};
-use crate::peer_db::PeerDatabase;
 
 pub struct SharedState {
   pub peer_db:    Box<dyn PeerDatabase<Error = Error> + Send>,
@@ -14,8 +11,12 @@ pub struct SharedState {
 
 impl SharedState {
   pub fn new(args: &Args) -> SharedState {
+
     SharedState {
-      peer_db:    Box::new(PeerDB::new(&args).unwrap()),
+      #[cfg(feature = "sql")]
+      peer_db:    Box::new(PeerDB::new(args.database_file.clone()).unwrap()),
+      #[cfg(not(feature = "sql"))]
+      peer_db:    Box::new(PeerDB::new().unwrap()),
       start_time: SystemTime::now(),
     }
   }

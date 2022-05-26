@@ -29,11 +29,16 @@ pub fn spawn_handler(shared_state: Arc<Mutex<SharedState>>, stream: TcpStream) {
 
       #[cfg(feature = "metrics")]
       metrics::OPENED_CONNECTIONS.inc();
+      #[cfg(feature = "metrics")]
+      let start_time = SystemTime::now();
 
       handler.run();
 
       #[cfg(feature = "metrics")]
       metrics::CLOSED_CONNECTIONS.inc();
+      #[cfg(feature = "metrics")]
+      metrics::CONNECTION_DURATION_SECONDS
+        .inc_by(SystemTime::now().duration_since(start_time).map(|d| d.as_secs_f64()).unwrap_or(0.))
     });
   } else {
     error!("Could not detect address for stream.");

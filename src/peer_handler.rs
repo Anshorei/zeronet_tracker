@@ -240,18 +240,21 @@ impl Handler {
             let bytes = ByteBuf::from(peer.address.pack());
             match peer.address {
               Address::IPV4(_, _) => {
-                peers.ip_v4.push(bytes);
+                // Need to check 'ip4' for backwards compat
+                if announce.need_types.contains(&"ipv4".to_string()) || announce.need_types.contains(&"ip4".to_string()) {
+                  peers.ip_v4.push(bytes);
+                }
               }
               Address::IPV6(_, _) => {
-                peers.ip_v6.push(bytes);
+                if announce.need_types.contains(&"ipv6".to_string()) {
+                  peers.ip_v6.push(bytes);
+                }
               }
               #[cfg(feature = "tor")]
-              Address::OnionV2(_, _) => {
-                peers.onion_v2.push(bytes);
-              }
-              #[cfg(feature = "tor")]
-              Address::OnionV3(_, _) => {
-                peers.onion_v2.push(bytes);
+              Address::OnionV2(_, _) | Address::OnionV3(_, _) => {
+                if announce.need_types.contains(&"onion".to_string()) {
+                  peers.onion_v2.push(bytes);
+                }
               }
               #[cfg(feature = "i2p")]
               _ => {

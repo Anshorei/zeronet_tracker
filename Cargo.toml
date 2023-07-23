@@ -4,10 +4,10 @@ version = "0.1.23"
 authors = ["Ansho Rei <anshorei@protonmail.com>"]
 edition = "2018"
 description = "A ZeroNet tracker written in Rust."
-documentation = "http://www.github.com/Anshorei/zeronet_tracker"
+documentation = "https://www.github.com/Anshorei/zeronet_tracker"
 readme = "README.md"
-homepage = "http://www.github.com/Anshorei/zeronet_tracker"
-repository = "http://www.github.com/Anshorei/zeronet_tracker"
+homepage = "https://www.github.com/Anshorei/zeronet_tracker"
+repository = "https://www.github.com/Anshorei/zeronet_tracker"
 license = "WTFPL"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
